@@ -45,10 +45,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let recordingStartTime;
     let statsInterval;
 
+    // ✅ CAMBIO: Usamos un estilo de mapa de OpenStreetMap que no requiere API key.
+    const openStreetMapStyle = {
+        'version': 8,
+        'sources': {
+            'osm': {
+                'type': 'raster',
+                'tiles': ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                'tileSize': 256,
+                'attribution': '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }
+        },
+        'layers': [
+            {
+                'id': 'osm',
+                'type': 'raster',
+                'source': 'osm'
+            }
+        ]
+    };
+
+    // El mapa base será el mismo para todos los temas de la UI.
     const mapStyles = {
-        dark: 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
-        light: 'https://tiles.stadiamaps.com/styles/alidade_smooth.json',
-        black: 'https://tiles.stadiamaps.com/styles/stamen_toner.json'
+        dark: openStreetMapStyle,
+        light: openStreetMapStyle,
+        black: openStreetMapStyle
     };
 
     // --- Módulo de Gestión de Datos (Integrado con data-manager.js) ---
@@ -90,9 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const mapController = {
         init: (theme) => {
             if (map) return; // Evitar reinicializar el mapa
+            
             map = new maplibregl.Map({
                 container: 'map',
-                style: mapStyles[theme],
+                style: mapStyles[theme], // Se pasa el objeto de estilo de OSM
                 center: [-79.0045, -2.9001], // Cuenca, Ecuador
                 zoom: 13,
                 pitch: 30,
@@ -102,12 +124,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 mapController.setupLayers();
                 geolocation.start();
             });
+             map.on('error', (e) => {
+                console.error("Error del mapa:", e);
+            });
         },
         updateTheme: (theme) => {
-            if (map) {
-                map.setStyle(mapStyles[theme]);
-                map.once('styledata', mapController.setupLayers);
-            }
+            // La UI cambia de tema, pero el mapa base de OSM no.
+            // Esta función ya no necesita cambiar el estilo del mapa.
         },
         createArrowImage: () => {
             const width = 16, height = 16;
@@ -320,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTheme: (theme) => {
             DOMElements.body.className = `theme-${theme} overflow-hidden h-screen flex flex-col`;
             appDataManager.saveMapTheme(theme);
-            mapController.updateTheme(theme);
+            // Ya no se llama a mapController.updateTheme(theme) porque el mapa base es siempre el mismo
             DOMElements.themeSelector.querySelectorAll('.theme-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.theme === theme);
             });
