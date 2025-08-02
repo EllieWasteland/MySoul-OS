@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySoul - OS</title>
+
+    <!-- Scripts y fuentes externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@400;600&family=Montserrat:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Contenido de style.css integrado */
+        :root {
+            --bg-color: #000000;
+            --text-primary: #FFFFFF;
+            --text-secondary: #a0a0a0;
+            --border-color: rgba(255, 255, 255, 0.2);
+            --highlight-color: rgba(255, 255, 255, 0.05);
+            --card-bg: rgba(16, 16, 16, 0.5);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --card-glow: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Montserrat', sans-serif;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
+            background-size: 24px 24px;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #onboarding-container,
+        #main-os-container,
+        #generic-modal {
+            display: none;
+        }
+
+        #main-os-container.active,
+        #onboarding-container.active {
+            display: block;
+        }
+
+        .onboarding-step {
+            display: none;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            background-color: var(--bg-color);
+            transition: opacity 0.5s ease-in-out;
+        }
+        .onboarding-step.active {
+            display: flex;
+            opacity: 1;
+        }
+        .onboarding-title {
+            font-family: 'Bitcount Prop Single', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+        .onboarding-text {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+            max-width: 500px;
+        }
+        .hud-item {
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        .hud-item:hover {
+            border-color: var(--text-primary);
+            background-color: var(--highlight-color);
+        }
+        .hud-button, .input-field {
+            width: 100%;
+            padding: 0.8rem 1.5rem;
+            background: transparent;
+            color: var(--text-primary);
+            font-weight: 500;
+            border: none;
+            outline: none;
+            cursor: pointer;
+        }
+        #fingerprint-button {
+            position: relative; width: 100px; height: 100px; border-radius: 50%;
+            border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        #fingerprint-button .icon { width: 50px; height: 50px; color: var(--text-secondary); transition: color 0.3s ease; }
+        #fingerprint-fill { position: absolute; top: 50%; left: 50%; width: 0; height: 0; background-color: var(--text-primary); border-radius: 50%; transform: translate(-50%, -50%); transition: width 2s ease-out, height 2s ease-out; }
+        #fingerprint-button.holding #fingerprint-fill { width: 100px; height: 100px; }
+        #fingerprint-button.holding .icon { color: var(--bg-color); z-index: 1; }
+        #transition-overlay { position: fixed; inset: 0; background: var(--text-primary); z-index: 250; transform: scale(0); border-radius: 50%; pointer-events: none; transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1); }
+        #transition-overlay.expand { transform: scale(2.5); }
+        .modal-content-wrapper { background-color: var(--bg-color); border: 1px solid var(--border-color); padding: 2rem; max-width: 500px; }
+
+        #main-os-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeInOS 0.8s 0.2s forwards;
+        }
+
+        @keyframes fadeInOS {
+            to { opacity: 1; }
+        }
+
+        #main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #app-carousel-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            perspective: 1200px;
+        }
+
+        #app-carousel-track {
+            position: relative;
+            width: 100%;
+            height: 65vh;
+            max-height: 500px;
+            transform-style: preserve-3d;
+            cursor: grab;
+            visibility: hidden; /* Previene parpadeo inicial */
+        }
+
+        .app-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+            width: clamp(280px, 75vw, 420px);
+            height: 100%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+        }
+
+        .app-card:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px 0px var(--card-glow);
+        }
+
+        .app-card.exiting {
+            transform: scale(1.1) !important;
+            opacity: 0 !important;
+        }
+
+        .card-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-title {
+            font-family: 'Bitcount Prop Single', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 3.5rem);
+            font-weight: 600;
+            line-height: 1;
+            color: var(--text-primary);
+        }
+
+        .card-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-top: 0.75rem;
+            max-width: 90%;
+        }
+
+        .card-status {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.1em;
+        }
+
+        .card-bg-decoration {
+            position: absolute;
+            bottom: -50%;
+            left: -25%;
+            width: 150%;
+            height: 100%;
+            background-image: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 60%);
+            z-index: 1;
+            transition: transform 0.5s ease;
+        }
+
+        .app-card:hover .card-bg-decoration {
+            transform: scale(1.2);
+        }
+
+        #carousel-navigation {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 2.5rem;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .dots-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 9999px;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active {
+            background-color: var(--text-primary);
+            transform: scale(1.4);
+        }
+
+        .swipe-hint {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 640px) {
+            #main-header {
+                padding: 1rem 1.5rem;
+            }
+            .card-title {
+                font-size: 2.2rem;
+            }
+            .card-description {
+                font-size: 0.9rem;
+            }
+            #carousel-navigation {
+                padding: 1.5rem;
+            }
+            .onboarding-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================================================================== -->
+    <!-- SECCIONES DE ONBOARDING Y MODAL (Reutilizadas del original)      -->
+    <!-- ================================================================== -->
+
+    <div id="onboarding-container">
+        <!-- Paso 1: Bienvenida -->
+        <div id="onboarding-step-1" class="onboarding-step">
+            <h2 class="onboarding-title">MySoul</h2>
+            <p class="onboarding-text">Tu sistema operativo personal. Inicia sesión para sincronizar tus datos en la nube de forma segura.</p>
+            <div class="mt-8 space-y-4 max-w-sm mx-auto w-full">
+                <div class="hud-item">
+                    <button id="google-onboarding-btn" class="hud-button">Continuar con Google</button>
+                </div>
+                <div class="hud-item">
+                    <button id="local-continue-btn" class="hud-button">Usar sin conexión</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paso 2: Introducir Nombre -->
+        <div id="onboarding-step-2" class="onboarding-step">
+            <h2 class="onboarding-title">¿Cómo te llamas?</h2>
+            <p class="onboarding-text">Este nombre se usará para personalizar tu experiencia.</p>
+            <div class="mt-8 max-w-sm mx-auto w-full">
+                <div class="hud-item">
+                    <input type="text" id="username-input" class="input-field text-2xl text-center" placeholder="Tu nombre...">
+                </div>
+                <div class="hud-item mt-4">
+                    <button id="confirm-name-btn" class="hud-button">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paso 3: Carta de Compromiso -->
+        <div id="onboarding-step-3" class="onboarding-step">
+            <div class="flex flex-col items-center justify-between h-full w-full">
+                <div class="flex-grow flex flex-col items-center justify-center">
+                    <h2 class="onboarding-title">Carta de Compromiso</h2>
+                    <p class="onboarding-text">
+                        Hoy, sellamos un pacto. Yo, <strong>MySoul</strong>, me comprometo a ser tu compañero constante. Tú, <strong id="commitment-username">Usuario</strong>, te comprometes a interactuar conmigo y a trabajar juntos por tus metas.
+                    </p>
+                </div>
+                <div id="fingerprint-button">
+                    <div id="fingerprint-fill"></div>
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 12c0 2.42-.943 4.638-2.5 6.312M15.75 9.75A3.75 3.75 0 0112 13.5m-3.75 0A3.75 3.75 0 0112 6.75m-3.75 0a3.75 3.75 0 00-3.75 3.75M9 13.5A3.75 3.75 0 0112 9.75M15 13.5A3.75 3.75 0 0112 17.25m-3.75 0h3.75" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="transition-overlay"></div>
+
+    <!-- Modal Genérico para Alertas y Confirmaciones -->
+    <div id="generic-modal" class="onboarding-step" style="z-index: 300; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px);">
+        <div class="modal-content-wrapper">
+            <h2 id="generic-modal-title" class="onboarding-title text-2xl">Notificación</h2>
+            <div id="generic-modal-text"></div>
+            <div id="generic-modal-buttons" class="mt-8 space-y-4 max-w-sm mx-auto w-full"></div>
+        </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- NUEVA ESTRUCTURA DEL LAUNCHER / SISTEMA OPERATIVO                 -->
+    <!-- ================================================================== -->
+    <div id="main-os-container" style="display: none;">
+        
+        <!-- Encabezado superior con información del usuario y hora -->
+        <header id="main-header">
+            <div id="user-info" class="flex items-center gap-3">
+                <img id="user-photo" src="https://placehold.co/40x40/000000/FFFFFF?text=G" alt="Foto de usuario" class="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:border-white">
+                <span id="header-username" class="font-semibold text-lg">Invitado</span>
+            </div>
+            <div id="system-time" class="font-mono text-lg font-bold text-gray-400">
+                10:42 PM
+            </div>
+        </header>
+
+        <!-- Contenedor principal del carrusel de aplicaciones -->
+        <main id="app-carousel-wrapper">
+            <div id="app-carousel-track">
+
+                <!-- Tarjeta de App 1: MyTime -->
+                <article class="app-card" data-href="mytime.html">
+                    <div class="card-content">
+                        <div class="card-header">
+                            <h2 class="card-title">MyTime</h2>
+                            <p class="card-description">Gestión de tareas y enfoque para maximizar tu productividad.</p>
+                        </div>
+                        <div class="card-footer">
+                            <span class="card-status">[ SYSTEM ONLINE ]</span>
+                        </div>
+                    </div>
+                    <div class="card-bg-decoration"></div>
+                </article>
+
+                <!-- Tarjeta de App 2: MyRoute -->
+                <article class="app-card" data-href="myroute.html">
+                    <div class="card-content">
+                        <div class="card-header">
+                            <h2 class="card-title">MyRoute</h2>
+                            <p class="card-description">Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.</p>
+                        </div>
+                        <div class="card-footer">
+                            <span class="card-status">[ SYSTEM ONLINE ]</span>
+                        </div>
+                    </div>
+                    <div class="card-bg-decoration"></div>
+                </article>
+
+                <!-- Tarjeta de App 3: MyMemory -->
+                <article class="app-card" data-href="mymemory.html">
+                     <div class="card-content">
+                        <div class="card-header">
+                            <h2 class="card-title">MyMemory</h2>
+                            <p class="card-description">Tu memoria extendida para organizar aficiones, ideas y listas.</p>
+                        </div>
+                        <div class="card-footer">
+                            <span class="card-status">[ SYSTEM ONLINE ]</span>
+                        </div>
+                    </div>
+                    <div class="card-bg-decoration"></div>
+                </article>
+
+            </div>
+        </main>
+        
+        <!-- Navegación del carrusel -->
+        <nav id="carousel-navigation">
+            <div class="dots-container">
+                <button class="nav-dot" data-index="0"></button>
+                <button class="nav-dot" data-index="1"></button>
+                <button class="nav-dot" data-index="2"></button>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Input oculto para la importación de archivos -->
+    <input type="file" id="import-file-input" class="hidden" accept=".json">
+
+    <!-- Script principal con toda la lógica integrada -->
+    <script type="module">
+        // Importar funciones de Firebase desde la CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // --- CREDENCIALES Y CONFIGURACIÓN DE FIREBASE ---
+        // Contenido de firebase-credentials.js integrado
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1mdncFubF9Nj7s64rslYtwUQmfQUhm3U",
+            authDomain: "mysoul-backupagent.firebaseapp.com",
+            projectId: "mysoul-backupagent",
+            storageBucket: "mysoul-backupagent.appspot.com",
+            messagingSenderId: "1030721607623",
+            appId: "1:1030721607623:web:7890633230f1315a232be2",
+            measurementId: "G-Q1BYXFV41W"
+        };
+
+        // --- INICIALIZACIÓN DE FIREBASE ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // --- GESTOR DE DATOS UNIFICADO ---
+        // Contenido de data-manager.js integrado
+        const dataManager = (() => {
+            const UNIFIED_STORAGE_KEY = 'mySoul-data-v1';
+
+            function getDefaultUnifiedState() {
+                return {
+                    myTime: { userName: null, tasks: [], schedule: [], currentView: 'dashboard', selectedTaskId: null, selectedSubjectId: null, tempSubtasks: [], calendarDate: new Date().toISOString(), wallpaper: null, filters: { priority: 'all', tag: 'all' }, zenSettings: { pomodoro: 25, shortBreak: 5, longBreak: 15, color: '#00F0FF' }, gamification: { streak: 0, lastCompletionDate: null, achievements: [], pomodoroCount: 0 }, currentZenTaskId: null },
+                    myMemory: { memories: [], settings: { theme: 'dark' } },
+                    myRoute: { routes: [], settings: { mapStyle: 'dark' } },
+                    globalSettings: { onboardingComplete: false }
+                };
+            }
+
+            function getUnifiedData() {
+                const data = localStorage.getItem(UNIFIED_STORAGE_KEY);
+                if (data) {
+                    try {
+                        const parsedData = JSON.parse(data);
+                        const defaultState = getDefaultUnifiedState();
+                        // Fusiona los datos guardados con el estado por defecto para asegurar que todas las claves existan
+                        return {
+                            ...defaultState,
+                            ...parsedData,
+                            myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) },
+                            myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) },
+                            myRoute: { ...defaultState.myRoute, ...(parsedData.myRoute || {}) },
+                            globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) },
+                        };
+                    } catch (error) {
+                        console.error("Error al parsear datos unificados, se retorna al estado por defecto:", error);
+                        return getDefaultUnifiedState();
+                    }
+                }
+                return getDefaultUnifiedState();
+            }
+
+            function saveUnifiedData(data) {
+                try {
+                    localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(data));
+                } catch (error) {
+                    console.error("Error al guardar los datos unificados:", error);
+                }
+            }
+            
+            return {
+                get: getUnifiedData,
+                save: saveUnifiedData
+            };
+        })();
+
+
+        // --- LÓGICA PRINCIPAL DEL OS ---
+        // Contenido de main.js integrado
+        document.addEventListener('DOMContentLoaded', () => {
+            const onboardingContainer = document.getElementById('onboarding-container');
+            const mainOsContainer = document.getElementById('main-os-container');
+            const genericModal = document.getElementById('generic-modal');
+            const modalTitle = document.getElementById('generic-modal-title');
+            const modalText = document.getElementById('generic-modal-text');
+            const modalButtons = document.getElementById('generic-modal-buttons');
+
+            function showModalAlert(message, title = 'Notificación') {
+                modalTitle.textContent = title;
+                modalText.innerHTML = `<p class="onboarding-text my-6">${message}</p>`;
+                modalButtons.innerHTML = `<div class="hud-item"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`;
+                genericModal.style.display = 'flex';
+                genericModal.classList.add('active');
+                document.getElementById('modal-ok-btn').addEventListener('click', () => {
+                    genericModal.classList.remove('active');
+                    setTimeout(() => genericModal.style.display = 'none', 300);
+                }, { once: true });
+            };
+
+            function showModalConfirm(message, onConfirm, title = 'Confirmación') {
+                modalTitle.textContent = title;
+                modalText.innerHTML = `<p class="onboarding-text my-6">${message}</p>`;
+                modalButtons.innerHTML = `<div class="hud-item"><button id="modal-confirm-btn" class="hud-button">Confirmar</button></div><div class="hud-item mt-4"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div>`;
+                genericModal.style.display = 'flex';
+                genericModal.classList.add('active');
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                const cancelBtn = document.getElementById('modal-cancel-btn');
+                const close = () => {
+                    genericModal.classList.remove('active');
+                    setTimeout(() => genericModal.style.display = 'none', 300);
+                };
+                confirmBtn.addEventListener('click', () => { close(); onConfirm?.(); }, { once: true });
+                cancelBtn.addEventListener('click', close, { once: true });
+            };
+
+            function signInWithGoogle() {
+                signInWithPopup(auth, provider)
+                    .catch((error) => {
+                        console.error("Error durante el inicio de sesión con Google:", error);
+                        showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación");
+                    });
+            }
+
+            function handleSignOut() {
+                signOut(auth).then(() => {
+                    window.location.reload();
+                }).catch((error) => {
+                    console.error("Error al cerrar sesión:", error);
+                });
+            }
+
+            async function saveDataToCloud() {
+                const user = auth.currentUser;
+                if (!user) {
+                    showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error");
+                    return;
+                }
+                try {
+                    const dataToSave = dataManager.get();
+                    const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup');
+                    await setDoc(userDocRef, dataToSave);
+                    showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo");
+                } catch (error) {
+                    console.error("Error saving data to Firestore:", error);
+                    showModalAlert("Hubo un error al guardar tus datos.", "Error");
+                }
+            }
+
+            async function loadDataFromCloud() {
+                const user = auth.currentUser;
+                if (!user) {
+                    showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error");
+                    return;
+                }
+                try {
+                    const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup');
+                    const docSnap = await getDoc(userDocRef);
+                    if (docSnap.exists()) {
+                        const cloudData = docSnap.data();
+                        showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => {
+                            dataManager.save(cloudData);
+                            showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito");
+                            setTimeout(() => window.location.reload(), 1500);
+                        });
+                    } else {
+                        showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos");
+                    }
+                } catch (error) {
+                    console.error("Error loading data from Firestore:", error);
+                    showModalAlert("Hubo un error al cargar tus datos.", "Error");
+                }
+            }
+
+            function exportData() {
+                const dataStr = JSON.stringify(dataManager.get(), null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'mysoul_backup.json';
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showModalAlert('Datos locales exportados con éxito.');
+            }
+
+            function importData() {
+                const importFileInput = document.getElementById('import-file-input');
+                importFileInput.click();
+                importFileInput.onchange = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+                            showModalConfirm('¿Estás seguro de que quieres sobreescribir tus datos locales?', () => {
+                                dataManager.save(importedData);
+                                showModalAlert('Datos importados con éxito. La página se recargará.');
+                                setTimeout(() => window.location.reload(), 2000);
+                            });
+                        } catch (error) { showModalAlert('Error al importar el archivo.'); }
+                    };
+                    reader.readAsText(file);
+                    event.target.value = '';
+                };
+            }
+
+            function showSettingsModal() {
+                modalTitle.textContent = "Ajustes y Datos";
+                modalText.innerHTML = `<p class="onboarding-text my-6">Gestiona tus datos locales y en la nube.</p>`;
+                modalButtons.innerHTML = `
+                    <div class="hud-item w-full"><button id="settings-save-cloud" class="hud-button">Guardar en la Nube</button></div>
+                    <div class="hud-item w-full mt-4"><button id="settings-load-cloud" class="hud-button">Cargar desde la Nube</button></div>
+                    <div class="hud-item w-full mt-4"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
+                    <div class="hud-item w-full mt-4"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
+                    <div class="hud-item w-full mt-4"><button id="settings-logout" class="hud-button">Cerrar Sesión</button></div>
+                    <div class="hud-item w-full mt-4"><button id="settings-cancel" class="hud-button">Cancelar</button></div>
+                `;
+                genericModal.style.display = 'flex';
+                genericModal.classList.add('active');
+
+                const close = () => {
+                    genericModal.classList.remove('active');
+                    setTimeout(() => genericModal.style.display = 'none', 300);
+                };
+                document.getElementById('settings-save-cloud').onclick = () => { close(); saveDataToCloud(); };
+                document.getElementById('settings-load-cloud').onclick = () => { close(); loadDataFromCloud(); };
+                document.getElementById('settings-export').onclick = () => { close(); exportData(); };
+                document.getElementById('settings-import').onclick = () => { close(); importData(); };
+                document.getElementById('settings-logout').onclick = () => { close(); handleSignOut(); };
+                document.getElementById('settings-cancel').onclick = close;
+            }
+
+            function initializeApp() {
+                const unifiedData = dataManager.get();
+                
+                if (unifiedData.globalSettings.onboardingComplete) {
+                    onboardingContainer.style.display = 'none';
+                    mainOsContainer.style.display = 'block';
+                    mainOsContainer.classList.add('active');
+                    initializeCarousel();
+                } else {
+                    onboardingContainer.style.display = 'block';
+                    onboardingContainer.classList.add('active');
+                    mainOsContainer.style.display = 'none';
+                    showStep(1);
+                }
+
+                // Lógica del reloj
+                const timeEl = document.getElementById('system-time');
+                function updateSystemTime() {
+                    if (timeEl) {
+                        const now = new Date();
+                        timeEl.textContent = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    }
+                }
+                updateSystemTime();
+                setInterval(updateSystemTime, 30000);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                const unifiedData = dataManager.get();
+                const userPhoto = document.getElementById('user-photo');
+                const headerUsername = document.getElementById('header-username');
+                
+                if (user) {
+                    userPhoto.src = user.photoURL || `https://placehold.co/40x40/FFFFFF/000000?text=${user.displayName?.charAt(0) || 'U'}`;
+                    headerUsername.textContent = user.displayName || 'Usuario';
+                    userPhoto.onclick = showSettingsModal;
+                    if (!unifiedData.globalSettings.onboardingComplete) {
+                        finishOnboarding();
+                    }
+                } else {
+                    const localUsername = unifiedData.myTime?.userName;
+                    headerUsername.textContent = localUsername || 'Invitado';
+                    userPhoto.src = `https://placehold.co/40x40/FFFFFF/000000?text=${localUsername?.charAt(0) || 'G'}`;
+                    userPhoto.onclick = signInWithGoogle;
+                }
+            });
+
+            function showStep(stepNumber) {
+                document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
+                const step = document.getElementById(`onboarding-step-${stepNumber}`);
+                if(step) {
+                    step.classList.add('active');
+                }
+            }
+
+            function finishOnboarding() {
+                const transitionOverlay = document.getElementById('transition-overlay');
+                transitionOverlay.classList.add('expand');
+                
+                setTimeout(() => {
+                    onboardingContainer.style.display = 'none';
+                    mainOsContainer.style.display = 'block';
+                    mainOsContainer.classList.add('active');
+                    
+                    const unifiedData = dataManager.get();
+                    unifiedData.globalSettings.onboardingComplete = true;
+                    dataManager.save(unifiedData);
+                    
+                    initializeCarousel();
+                }, 400);
+
+                setTimeout(() => {
+                    transitionOverlay.style.display = 'none';
+                }, 1200);
+            }
+
+            document.getElementById('google-onboarding-btn')?.addEventListener('click', signInWithGoogle);
+            document.getElementById('local-continue-btn')?.addEventListener('click', () => showStep(2));
+            document.getElementById('confirm-name-btn')?.addEventListener('click', () => {
+                const usernameInput = document.getElementById('username-input');
+                const username = usernameInput.value.trim();
+                if (username) {
+                    const unifiedData = dataManager.get();
+                    if (!unifiedData.myTime) unifiedData.myTime = {};
+                    unifiedData.myTime.userName = username;
+                    dataManager.save(unifiedData);
+                    document.getElementById('commitment-username').textContent = username;
+                    document.getElementById('header-username').textContent = username;
+                    showStep(3);
+                } else { showModalAlert('Por favor, introduce un nombre.'); }
+            });
+            const fingerprintButton = document.getElementById('fingerprint-button');
+            if(fingerprintButton) {
+                let holdTimeout;
+                const startHold = (e) => { e.preventDefault(); fingerprintButton.classList.add('holding'); holdTimeout = setTimeout(finishOnboarding, 2000); };
+                const endHold = () => { fingerprintButton.classList.remove('holding'); clearTimeout(holdTimeout); };
+                fingerprintButton.addEventListener('mousedown', startHold);
+                fingerprintButton.addEventListener('mouseup', endHold);
+                fingerprintButton.addEventListener('mouseleave', endHold);
+                fingerprintButton.addEventListener('touchstart', startHold, { passive: true });
+                fingerprintButton.addEventListener('touchend', endHold);
+            }
+            
+            function initializeCarousel() {
+                const track = document.getElementById('app-carousel-track');
+                if (!track) return;
+                const cards = Array.from(track.querySelectorAll('.app-card'));
+                const dots = Array.from(document.querySelectorAll('.nav-dot'));
+                if (cards.length === 0) return;
+
+                let currentIndex = 0;
+                let isDragging = false;
+                let startPos = 0;
+                let dragOffset = 0;
+                const clickThreshold = 10;
+
+                function updateCardPositions(instant = false) {
+                    cards.forEach((card, index) => {
+                        card.style.transition = instant ? 'none' : 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease';
+                        
+                        const offset = index - currentIndex;
+                        const absOffset = Math.abs(offset);
+                        
+                        let translateX = offset * 50;
+                        if (isDragging && index === currentIndex) {
+                            translateX += dragOffset / card.clientWidth * 50;
+                        }
+
+                        const scale = 1 - absOffset * 0.1;
+                        const zIndex = 10 - absOffset;
+                        const opacity = 1 - absOffset * 0.3;
+                        
+                        card.style.transform = `translateX(${translateX}%) scale(${scale})`;
+                        card.style.opacity = `${Math.max(0, opacity)}`;
+                        card.style.zIndex = `${zIndex}`;
+                        card.style.pointerEvents = (offset === 0) ? 'auto' : 'none';
+                    });
+
+                    dots.forEach((dot, index) => {
+                        dot.classList.toggle('active', index === currentIndex);
+                    });
+                }
+                
+                const getPositionX = (e) => e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+                const dragStart = (e) => { isDragging = true; startPos = getPositionX(e); dragOffset = 0; track.style.cursor = 'grabbing'; cards.forEach(card => card.style.transition = 'none'); };
+                const dragMove = (e) => { if (isDragging) { dragOffset = getPositionX(e) - startPos; updateCardPositions(true); } };
+                const dragEnd = () => { if (!isDragging) return; isDragging = false; track.style.cursor = 'grab'; if (dragOffset < -50 && currentIndex < cards.length - 1) { currentIndex++; } if (dragOffset > 50 && currentIndex > 0) { currentIndex--; } dragOffset = 0; updateCardPositions(); };
+                
+                dots.forEach(dot => {
+                    dot.addEventListener('click', () => {
+                        currentIndex = parseInt(dot.dataset.index);
+                        updateCardPositions();
+                    });
+                });
+                
+                cards.forEach((card, index) => {
+                    card.addEventListener('click', (e) => {
+                        if (Math.abs(dragOffset) > clickThreshold) {
+                            e.preventDefault();
+                            return;
+                        }
+                         if (index === currentIndex && card.dataset.href) {
+                            card.classList.add('exiting');
+                            setTimeout(() => { window.location.href = card.dataset.href; }, 400);
+                        }
+                    });
+                });
+
+                const wrapper = document.getElementById('app-carousel-wrapper');
+                wrapper.addEventListener('mousedown', dragStart);
+                wrapper.addEventListener('touchstart', dragStart, { passive: true });
+                wrapper.addEventListener('mousemove', dragMove);
+                wrapper.addEventListener('touchmove', dragMove, { passive: true });
+                wrapper.addEventListener('mouseup', dragEnd);
+                wrapper.addEventListener('mouseleave', dragEnd);
+                wrapper.addEventListener('touchend', dragEnd);
+
+                const navContainer = document.getElementById('carousel-navigation');
+                if (navContainer && !navContainer.querySelector('.swipe-hint')) {
+                    const swipeHint = document.createElement('p');
+                    swipeHint.className = 'swipe-hint';
+                    swipeHint.textContent = '‹ Desliza para explorar ›';
+                    navContainer.appendChild(swipeHint);
+                }
+
+                setTimeout(() => {
+                    updateCardPositions(true);
+                    track.style.visibility = 'visible';
+                }, 100);
+
+                window.addEventListener('resize', () => updateCardPositions(true));
+            }
+
+            // --- FUNCIÓN DE INICIALIZACIÓN PRINCIPAL DE LA APP ---
+            initializeApp();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyMemory</title>
+    
+    <!-- Scripts y Fuentes Externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <!-- ✅ Enlace al nuevo archivo CSS dedicado para MyMemory -->
+    <link rel="stylesheet" href="/src/css/mymemory.css">
+</head>
+<body>
+    <svg id="app-background-svg" viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice">
+        <path style="animation-delay: -5s;" d="M -20,80 C 40,20 80,120 140,70 S 180,10 220,60" />
+        <path style="animation-delay: -2s;" d="M -20,90 C 30,40 70,140 130,80 S 190,30 220,70" />
+        <path style="animation-delay: -7s;" d="M -20,100 C 20,80 40,120 60,100 C 80,80 100,120 120,100 C 140,80 160,120 180,100 C 200,80 220,120 240,100" />
+        <path style="animation-delay: -3s;" d="M -20,90 C 20,70 40,110 60,90 C 80,70 100,110 120,90 C 140,70 160,110 180,90 C 200,70 220,110 240,90" />
+    </svg>
+
+    <div class="main-container">
+        <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+
+        <div id="memories-list-view" class="view">
+            <div class="view-title-container"> <h1 class="app-title">MyMemory</h1> </div>
+            <div id="memories-container" class="memories-list"></div>
+        </div>
+
+        <div id="memory-details-view" class="view">
+             <div class="view-title-container"> <h2 id="details-memory-title" class="app-title truncate"></h2> </div>
+            <form id="add-item-form" class="flex gap-4">
+                <div class="hud-item flex-grow">
+                    <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                    <input type="text" id="item-title-input" class="input-field" placeholder="Añadir nuevo recuerdo..." required>
+                </div>
+                <div class="hud-item">
+                    <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                    <button type="submit" class="hud-button">Añadir</button>
+                </div>
+            </form>
+            <div id="memory-items-container" class="details-list"></div>
+        </div>
+        
+        <div id="floating-nav" class="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-4">
+            <div id="main-nav-buttons" class="flex gap-4">
+                <div class="hud-item">
+                    <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                    <button id="settings-btn" class="hud-button">Ajustes</button>
+                </div>
+                 <div class="hud-item">
+                    <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                    <button id="add-memory-btn" class="hud-button">Nueva Memoria</button>
+                </div>
+                <div class="hud-item">
+                    <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                    <a href="index.html" class="hud-button">Volver al Hub</a>
+                </div>
+            </div>
+            <div id="details-nav-buttons" class="hidden">
+                 <div class="hud-item">
+                    <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                    <button id="back-to-list-btn" class="hud-button">Volver</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div id="memory-modal" class="modal-overlay">
+        <div class="modal-content">
+            <header class="flex justify-between items-center mb-6">
+                <h2 id="memory-modal-title" class="text-2xl font-semibold">Nueva Memoria</h2>
+                <button class="close-modal-btn" data-close-modal>&times;</button>
+            </header>
+            <form id="memory-form">
+                <input type="hidden" id="memory-id-input">
+                <div id="modal-step-1" class="modal-step">
+                    <p class="text-sm text-secondary mb-4">Define un nombre único para tu nuevo módulo de memoria.</p>
+                    <label for="memory-title-input-modal" class="block mb-2 text-sm text-secondary">Título del Módulo</label>
+                    <div class="hud-item">
+                        <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                        <input type="text" id="memory-title-input-modal" class="input-field" required>
+                    </div>
+                    <div id="continue-btn-container" class="hud-item confirm-item w-full mt-6 hidden">
+                        <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                        <button type="button" id="continue-btn" class="hud-button w-full">Continuar</button>
+                    </div>
+                </div>
+                <div id="modal-step-2" class="modal-step">
+                    <p class="text-sm text-secondary mb-4">Añade una breve descripción para identificar el propósito de este módulo.</p>
+                    <label for="memory-description-input" class="block mb-2 text-sm text-secondary">Descripción (Opcional)</label>
+                    <div class="hud-item">
+                        <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                        <textarea id="memory-description-input" rows="3" class="input-field !p-2"></textarea>
+                    </div>
+                    <div class="flex gap-4 mt-6">
+                        <div class="hud-item flex-1">
+                            <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                            <button type="button" id="skip-btn" class="hud-button w-full">Omitir</button>
+                        </div>
+                        <div class="hud-item confirm-item flex-1">
+                            <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                            <button type="button" id="create-btn" class="hud-button w-full">Guardar Módulo</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <header class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Ajustes</h2>
+                <button class="close-modal-btn" data-close-modal>&times;</button>
+            </header>
+            <div class="space-y-8 mt-4">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Apariencia</h3>
+                    <div class="hud-item w-full">
+                         <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                        <button id="toggle-theme-btn" class="hud-button w-full">Cambiar Tema</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-red-500">Zona de Peligro</h3>
+                    <div class="hud-item danger-item w-full">
+                        <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                        <button id="delete-data-btn" class="hud-button w-full">Borrar toda la información</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="confirmation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <header class="flex justify-between items-center mb-6">
+                <h2 id="confirmation-title" class="text-2xl font-semibold">Confirmación</h2>
+            </header>
+            <p id="confirmation-message" class="text-secondary my-6">¿Estás seguro?</p>
+            <div class="flex gap-4 mt-8">
+                 <div class="hud-item flex-1">
+                    <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                    <button id="confirm-cancel-btn" class="hud-button w-full">Cancelar</button>
+                </div>
+                <div class="hud-item danger-item flex-1">
+                    <div class="corner-decoration top-left"></div><div class="corner-decoration top-right"></div><div class="corner-decoration bottom-left"></div><div class="corner-decoration bottom-right"></div>
+                    <button id="confirm-action-btn" class="hud-button w-full">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ SCRIPT MODULAR: Toda la lógica de JS se carga desde aquí -->
+    <script type="module" src="/src/js/mymemory.js"></script>
+</body>
+</html>
