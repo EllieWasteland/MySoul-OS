@@ -447,7 +447,6 @@
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // --- CREDENCIALES Y CONFIGURACIÓN DE FIREBASE ---
-        // Contenido de firebase-credentials.js integrado
         const firebaseConfig = {
             apiKey: "AIzaSyB1mdncFubF9Nj7s64rslYtwUQmfQUhm3U",
             authDomain: "mysoul-backupagent.firebaseapp.com",
@@ -465,7 +464,6 @@
         const provider = new GoogleAuthProvider();
 
         // --- GESTOR DE DATOS UNIFICADO ---
-        // Contenido de data-manager.js integrado
         const dataManager = (() => {
             const UNIFIED_STORAGE_KEY = 'mySoul-data-v1';
 
@@ -484,7 +482,6 @@
                     try {
                         const parsedData = JSON.parse(data);
                         const defaultState = getDefaultUnifiedState();
-                        // Fusiona los datos guardados con el estado por defecto para asegurar que todas las claves existan
                         return {
                             ...defaultState,
                             ...parsedData,
@@ -517,7 +514,6 @@
 
 
         // --- LÓGICA PRINCIPAL DEL OS ---
-        // Contenido de main.js integrado
         document.addEventListener('DOMContentLoaded', () => {
             const onboardingContainer = document.getElementById('onboarding-container');
             const mainOsContainer = document.getElementById('main-os-container');
@@ -570,6 +566,7 @@
                 });
             }
 
+            // ✅ CORRECCIÓN: Función modificada para manejar arrays anidados.
             async function saveDataToCloud() {
                 const user = auth.currentUser;
                 if (!user) {
@@ -577,16 +574,30 @@
                     return;
                 }
                 try {
-                    const dataToSave = dataManager.get();
+                    // 1. Obtener una copia profunda de los datos para no modificar el estado local
+                    const dataToSave = JSON.parse(JSON.stringify(dataManager.get()));
+
+                    // 2. Convertir los 'path' de las rutas a strings JSON
+                    if (dataToSave.myRoute && dataToSave.myRoute.routes) {
+                        dataToSave.myRoute.routes.forEach(route => {
+                            if (Array.isArray(route.path)) {
+                                route.path = JSON.stringify(route.path);
+                            }
+                        });
+                    }
+
+                    // 3. Guardar los datos procesados en Firestore
                     const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup');
                     await setDoc(userDocRef, dataToSave);
                     showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo");
+
                 } catch (error) {
                     console.error("Error saving data to Firestore:", error);
-                    showModalAlert("Hubo un error al guardar tus datos.", "Error");
+                    showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error");
                 }
             }
 
+            // ✅ CORRECCIÓN: Función modificada para manejar datos cargados.
             async function loadDataFromCloud() {
                 const user = auth.currentUser;
                 if (!user) {
@@ -598,6 +609,23 @@
                     const docSnap = await getDoc(userDocRef);
                     if (docSnap.exists()) {
                         const cloudData = docSnap.data();
+
+                        // 1. Convertir los 'path' de strings JSON de vuelta a arrays
+                        if (cloudData.myRoute && cloudData.myRoute.routes) {
+                            cloudData.myRoute.routes.forEach(route => {
+                                // Solo intentar parsear si es un string (para evitar errores)
+                                if (typeof route.path === 'string') {
+                                    try {
+                                        route.path = JSON.parse(route.path);
+                                    } catch (e) {
+                                        console.error("Error al parsear el path de la ruta:", e);
+                                        route.path = []; // Dejarlo como un array vacío si falla
+                                    }
+                                }
+                            });
+                        }
+
+                        // 2. Preguntar al usuario y guardar los datos procesados
                         showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => {
                             dataManager.save(cloudData);
                             showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito");
