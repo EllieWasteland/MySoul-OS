@@ -396,6 +396,59 @@
 
             function showModalAlert(message, title = 'Notificación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="hud-item rounded-full"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); document.getElementById('modal-ok-btn').addEventListener('click', () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }, { once: true }); };
             
+            // ** FUNCIÓN DE AJUSTES CORREGIDA Y RE-IMPLEMENTADA **
+            function showSettingsModal() {
+                const user = auth.currentUser;
+                modalTitle.textContent = "Ajustes";
+
+                const personalizationHTML = `
+                    <p class="onboarding-text mb-4">Cambia la apariencia de tu sistema.</p>
+                    <div class="hud-item rounded-full"><button id="change-wallpaper-btn" class="hud-button">Cambiar fondo</button></div>`;
+
+                let dataManagementHTML = '';
+                if (user) {
+                    dataManagementHTML = `<p class="onboarding-text">Gestión de datos en la nube no implementada en este mock.</p>`;
+                } else {
+                    dataManagementHTML = `
+                        <p class="onboarding-text mb-4 text-center">Inicia sesión para sincronizar tus datos en la nube.</p>
+                        <div class="hud-item rounded-full bg-white mb-6"><button id="settings-login-google" class="hud-button font-semibold text-black">Iniciar Sesión con Google</button></div>
+                        <hr class="border-t-2 border-dashed border-gray-700 my-6">
+                        <p class="onboarding-text mb-4 text-center">O gestiona tus datos locales.</p>
+                        <div class="space-y-4">
+                            <div class="hud-item rounded-full"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
+                        </div>`;
+                }
+
+                modalText.innerHTML = `
+                    <div id="settings-tabs">
+                        <button class="settings-tab active" data-tab="personalization">Personalización</button>
+                        <button class="settings-tab" data-tab="data">Gestión de Datos</button>
+                    </div>
+                    <div id="personalization-content" class="settings-tab-content active">${personalizationHTML}</div>
+                    <div id="data-content" class="settings-tab-content">${dataManagementHTML}</div>`;
+                
+                modalButtons.innerHTML = `<div class="hud-item rounded-full mt-6"><button id="settings-cancel" class="hud-button">Cerrar</button></div>`;
+                genericModal.style.display = 'flex';
+                genericModal.classList.add('active');
+
+                const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); };
+                
+                const tabs = genericModal.querySelectorAll('.settings-tab');
+                const contents = genericModal.querySelectorAll('.settings-tab-content');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        contents.forEach(c => c.classList.remove('active'));
+                        tab.classList.add('active');
+                        document.getElementById(`${tab.dataset.tab}-content`).classList.add('active');
+                    });
+                });
+
+                document.getElementById('change-wallpaper-btn').onclick = () => document.getElementById('wallpaper-input').click();
+                document.getElementById('settings-cancel').onclick = close;
+            }
+
             function showAddAppModal() {
                 modalTitle.textContent = "Añadir Nueva App";
                 modalText.innerHTML = `
@@ -561,7 +614,8 @@
                     headerUsername.textContent = localUsername || 'Invitado';
                     userPhoto.src = `https://placehold.co/40x40/FFFFFF/000000?text=${localUsername?.charAt(0) || 'G'}`;
                 }
-                userPhoto.onclick = () => { /* Lógica del modal de ajustes */ };
+                // ** EVENT LISTENER CORREGIDO **
+                userPhoto.onclick = showSettingsModal;
             });
 
             function showStep(stepNumber) { document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active')); const step = document.getElementById(`onboarding-step-${stepNumber}`); if(step) { step.classList.add('active'); } }
@@ -769,7 +823,6 @@
                 }
             }
             
-            // ** FUNCIÓN DE RENDERIZADO DE TAREAS CORREGIDA **
             function renderTodos() {
                 const todosGrid = document.getElementById('todos-grid');
                 if (!todosGrid) return;
@@ -787,7 +840,7 @@
 
                         return `
                             <div class="small-card col-span-full">
-                                <h3 class="small-card-title">${todo.title || todo.text || 'Tarea sin descripción'}</h3>
+                                <h3 class="small-card-title">${todo.text || 'Tarea sin descripción'}</h3>
                                 ${subtasksHTML}
                             </div>
                         `;
