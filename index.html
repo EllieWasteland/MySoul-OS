@@ -24,7 +24,7 @@
             --text-secondary: #a0a0a0;
             --border-color: rgba(255, 255, 255, 0.2);
             --highlight-color: rgba(255, 255, 255, 0.05);
-            --card-bg: rgba(16, 16, 16, 0.5);
+            --card-bg: rgba(24, 24, 24, 0.65); /* Opacidad aumentada */
             --card-border: rgba(255, 255, 255, 0.1);
             --card-glow: rgba(255, 255, 255, 0.05);
         }
@@ -105,11 +105,13 @@
             width: 100vw;
             height: 100vh;
             display: flex;
-            align-items: center;
+            align-items: start; /* CORREGIDO: para que el contenido no se centre verticalmente */
             justify-content: center;
             perspective: 1200px;
-            padding-top: 8rem;
+            padding-top: 10rem; /* Aumentado para dar espacio */
             padding-bottom: 8rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
             box-sizing: border-box;
             opacity: 0;
             visibility: hidden;
@@ -149,13 +151,18 @@
         .card-status { font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 0.1em; }
         .card-bg-decoration { position: absolute; bottom: -50%; left: -25%; width: 150%; height: 100%; background-image: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 60%); z-index: 1; transition: transform 0.5s ease; }
         .app-card:hover .card-bg-decoration { transform: scale(1.2); }
+        .external-app-tag { background-color: rgba(255, 255, 255, 0.1); color: var(--text-secondary); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-family: 'Roboto Mono', monospace; }
 
         /* --- Estilos para Contenido de Nuevas Categorías --- */
-        .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 1.5rem; width: 100%; max-width: 1200px; height: 100%; overflow-y: auto; align-content: start; }
-        .small-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; backdrop-filter: blur(10px); padding: 1.5rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; }
+        .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem; width: 100%; max-width: 1200px; height: 100%; overflow-y: auto; align-content: start; }
+        .small-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; backdrop-filter: blur(10px); padding: 1.5rem; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; }
         .small-card:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.3); }
         .small-card-title { font-size: 1.5rem; font-weight: 600; }
         .small-card-content { font-size: 1rem; color: var(--text-secondary); }
+        .action-button { background-color: rgba(255,255,255,0.1); padding: 0.75rem 1.5rem; border-radius: 99px; text-align: center; transition: background-color 0.2s; cursor: pointer; display: block; margin-top: 1rem; }
+        .action-button:hover { background-color: rgba(255,255,255,0.2); }
+        .todo-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; }
+        .todo-checkbox { width: 1.25rem; height: 1.25rem; background-color: transparent; border: 2px solid var(--border-color); border-radius: 50%; }
 
         /* --- Barra de Navegación Inferior (Dock) --- */
         #bottom-dock {
@@ -203,6 +210,7 @@
         .hud-item { border: 1px solid var(--border-color); transition: all 0.2s ease; }
         .hud-item:hover { border-color: var(--text-primary); background-color: var(--highlight-color); }
         .hud-button, .input-field { width: 100%; padding: 0.8rem 1.5rem; background: transparent; color: var(--text-primary); font-weight: 500; border: none; outline: none; cursor: pointer; }
+        .input-field { border: 1px solid var(--border-color); border-radius: 0.5rem; margin-bottom: 1rem; }
         #fingerprint-button { position: relative; width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
         #fingerprint-button .icon { width: 50px; height: 50px; color: var(--text-secondary); transition: color 0.3s ease; }
         #fingerprint-fill { position: absolute; top: 50%; left: 50%; width: 0; height: 0; background-color: var(--text-primary); border-radius: 50%; transform: translate(-50%, -50%); transition: width 2s ease-out, height 2s ease-out; }
@@ -212,7 +220,7 @@
         #transition-overlay.expand { transform: scale(2.5); }
         .modal-content-wrapper { background-color: var(--card-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); padding: 2rem; max-width: 500px; width: 90vw; border-radius: 24px; }
         
-        /* --- NUEVOS ESTILOS PARA MODAL DE AJUSTES --- */
+        /* --- Estilos para Modal de Ajustes --- */
         #settings-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
         .settings-tab { padding: 0.75rem 1.5rem; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s ease; }
         .settings-tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
@@ -293,39 +301,50 @@
         </header>
 
         <!-- Contenedor principal que cambia según la categoría del dock -->
+        <!-- ** ORDEN DE SECCIONES ACTUALIZADO ** -->
         <main id="main-content-carousel">
-            <!-- Contenido para "Hub" (el carrusel original) -->
+            <!-- 1. Hub -->
             <div id="hub-content" class="dock-content" data-name="Hub">
                 <div id="app-carousel-track">
-                    <article class="app-card" data-href="mytime.html">
-                        <div class="card-content">
-                            <div class="card-header"><h2 class="card-title">MyTime</h2><p class="card-description">Gestión de tareas y enfoque para maximizar tu productividad.</p></div>
-                            <div class="card-footer"><span class="card-status">[ SYSTEM ONLINE ]</span></div>
-                        </div>
-                        <div class="card-bg-decoration"></div>
-                    </article>
-                    <article class="app-card" data-href="myroute.html">
-                        <div class="card-content">
-                            <div class="card-header"><h2 class="card-title">MyRoute</h2><p class="card-description">Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.</p></div>
-                            <div class="card-footer"><span class="card-status">[ SYSTEM ONLINE ]</span></div>
-                        </div>
-                        <div class="card-bg-decoration"></div>
-                    </article>
-                    <article class="app-card" data-href="mymemory.html">
-                         <div class="card-content">
-                            <div class="card-header"><h2 class="card-title">MyMemory</h2><p class="card-description">Tu memoria extendida para organizar aficiones, ideas y listas.</p></div>
-                            <div class="card-footer"><span class="card-status">[ SYSTEM ONLINE ]</span></div>
-                        </div>
-                        <div class="card-bg-decoration"></div>
-                    </article>
+                    <!-- Las tarjetas de apps se generarán dinámicamente aquí -->
                 </div>
             </div>
-            <!-- Otros contenidos (Tiempo, Notas, etc.) permanecen igual -->
-            <div id="weather-content" class="dock-content" data-name="Tiempo"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Ahora</h3><p class="small-card-content text-4xl">15°C <span class="text-2xl">☀️</span></p><p class="text-secondary">Despejado</p></div><div class="small-card"><h3 class="small-card-title">Pronóstico</h3><p class="small-card-content">Tarde: 18°C 🌤️<br>Noche: 12°C 🌙</p></div></div></div>
-            <div id="notes-content" class="dock-content" data-name="Notas"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Idea Rápida</h3><p class="small-card-content">Crear una app de sistema operativo personal...</p></div><div class="small-card"><h3 class="small-card-title">Lista de compras</h3><p class="small-card-content">- Leche<br>- Pan<br>- Café</p></div></div></div>
-            <div id="shortcuts-content" class="dock-content" data-name="Accesos"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Llamar a Casa</h3><p class="small-card-content text-4xl">📞</p></div><div class="small-card"><h3 class="small-card-title">Música Relajante</h3><p class="small-card-content text-4xl">🎵</p></div></div></div>
-            <div id="files-content" class="dock-content" data-name="Archivos"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Documentos</h3><p class="small-card-content text-4xl">📄</p></div></div></div>
-            <div id="health-content" class="dock-content" data-name="Salud"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Pasos Hoy</h3><p class="small-card-content text-4xl">👟 8,452</p></div></div></div>
+            
+            <!-- 2. Accesos -->
+            <div id="shortcuts-content" class="dock-content" data-name="Accesos">
+                <div id="shortcuts-grid" class="content-grid">
+                    <!-- Los accesos directos se generarán dinámicamente aquí -->
+                </div>
+            </div>
+            
+            <!-- 3. Tareas (Todos rápidos) -->
+            <div id="todos-content" class="dock-content" data-name="Tareas">
+                 <div id="todos-grid" class="content-grid">
+                    <!-- Los todos se generarán dinámicamente aquí -->
+                 </div>
+            </div>
+
+            <!-- 4. Notas -->
+            <div id="notes-content" class="dock-content" data-name="Notas">
+                <div id="notes-grid" class="content-grid">
+                    <!-- Las notas se generarán dinámicamente aquí -->
+                </div>
+            </div>
+
+            <!-- 5. Tiempo -->
+            <div id="weather-content" class="dock-content" data-name="Tiempo">
+                <div class="content-grid">
+                    <div class="small-card"><h3 class="small-card-title">Ahora</h3><p class="small-card-content text-4xl">15°C <span class="text-2xl">☀️</span></p><p class="text-secondary">Despejado</p></div>
+                    <div class="small-card"><h3 class="small-card-title">Pronóstico</h3><p class="small-card-content">Tarde: 18°C 🌤️<br>Noche: 12°C 🌙</p></div>
+                </div>
+            </div>
+
+            <!-- 6. Salud -->
+            <div id="health-content" class="dock-content" data-name="Salud">
+                <div class="content-grid">
+                    <div class="small-card"><h3 class="small-card-title">Pasos Hoy</h3><p class="small-card-content text-4xl">👟 8,452</p></div>
+                </div>
+            </div>
         </main>
         
         <!-- Barra de Navegación Inferior (Dock) -->
@@ -339,29 +358,30 @@
     <input type="file" id="wallpaper-input" class="hidden" accept="image/*">
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1mdncFubF9Nj7s64rslYtwUQmfQUhm3U",
-            authDomain: "mysoul-backupagent.firebaseapp.com",
-            projectId: "mysoul-backupagent",
-            storageBucket: "mysoul-backupagent.appspot.com",
-            messagingSenderId: "1030721607623",
-            appId: "1:1030721607623:web:7890633230f1315a232be2",
-            measurementId: "G-Q1BYXFV41W"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+        // Mock de Firebase para desarrollo local sin conexión
+        const auth = { currentUser: null, onAuthStateChanged: (callback) => callback(null) };
 
         const dataManager = (() => {
             const UNIFIED_STORAGE_KEY = 'mySoul-data-v1';
-            function getDefaultUnifiedState() { return { myTime: { userName: null, tasks: [], schedule: [], currentView: 'dashboard', selectedTaskId: null, selectedSubjectId: null, tempSubtasks: [], calendarDate: new Date().toISOString(), wallpaper: null, filters: { priority: 'all', tag: 'all' }, zenSettings: { pomodoro: 25, shortBreak: 5, longBreak: 15, color: '#00F0FF' }, gamification: { streak: 0, lastCompletionDate: null, achievements: [], pomodoroCount: 0 }, currentZenTaskId: null }, myMemory: { memories: [], settings: { theme: 'dark' } }, myRoute: { routes: [], settings: { mapStyle: 'dark' } }, globalSettings: { onboardingComplete: false } }; }
-            function getUnifiedData() { const data = localStorage.getItem(UNIFIED_STORAGE_KEY); if (data) { try { const parsedData = JSON.parse(data); const defaultState = getDefaultUnifiedState(); return { ...defaultState, ...parsedData, myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) }, myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) }, myRoute: { ...defaultState.myRoute, ...(parsedData.myRoute || {}) }, globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) }, }; } catch (error) { console.error("Error al parsear datos unificados, se retorna al estado por defecto:", error); return getDefaultUnifiedState(); } } return getDefaultUnifiedState(); }
+            
+            function getDefaultUnifiedState() { 
+                return { 
+                    myTime: { 
+                        userName: null, 
+                        tasks: [], // Inicia vacío
+                        wallpaper: null 
+                    }, 
+                    myMemory: { 
+                        memories: [] // Inicia vacío
+                    }, 
+                    globalSettings: { 
+                        onboardingComplete: false,
+                        externalApps: [],
+                        shortcuts: [] // Inicia vacío
+                    } 
+                }; 
+            }
+            function getUnifiedData() { const data = localStorage.getItem(UNIFIED_STORAGE_KEY); if (data) { try { const parsedData = JSON.parse(data); const defaultState = getDefaultUnifiedState(); return { ...defaultState, ...parsedData, myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) }, myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) }, globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) }, }; } catch (error) { console.error("Error al parsear datos unificados, se retorna al estado por defecto:", error); return getDefaultUnifiedState(); } } return getDefaultUnifiedState(); }
             function saveUnifiedData(data) { try { localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(data)); } catch (error) { console.error("Error al guardar los datos unificados:", error); } }
             return { get: getUnifiedData, save: saveUnifiedData };
         })();
@@ -376,106 +396,132 @@
 
             function showModalAlert(message, title = 'Notificación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="hud-item rounded-full"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); document.getElementById('modal-ok-btn').addEventListener('click', () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }, { once: true }); };
             
-            // CORRECCIÓN: Aplicar estilo de texto negro al botón de confirmar
-            function showModalConfirm(message, onConfirm, title = 'Confirmación') { 
-                modalTitle.textContent = title; 
-                modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; 
-                modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white"><button id="modal-confirm-btn" class="hud-button text-black font-semibold">Confirmar</button></div></div>`; 
-                genericModal.style.display = 'flex'; 
-                genericModal.classList.add('active'); 
-                const confirmBtn = document.getElementById('modal-confirm-btn'); 
-                const cancelBtn = document.getElementById('modal-cancel-btn'); 
-                const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }; 
-                confirmBtn.addEventListener('click', () => { close(); onConfirm?.(); }, { once: true }); 
-                cancelBtn.addEventListener('click', close, { once: true }); 
-            };
-
-            function signInWithGoogle() { signInWithPopup(auth, provider).catch((error) => { console.error("Error durante el inicio de sesión con Google:", error); showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación"); }); }
-            function handleSignOut() { signOut(auth).then(() => { window.location.reload(); }).catch((error) => { console.error("Error al cerrar sesión:", error); }); }
-            
-            async function saveDataToCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error"); return; } try { const dataToSave = JSON.parse(JSON.stringify(dataManager.get())); if (dataToSave.myRoute && dataToSave.myRoute.routes) { dataToSave.myRoute.routes.forEach(route => { if (Array.isArray(route.path)) { route.path = JSON.stringify(route.path); } }); } const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); await setDoc(userDocRef, dataToSave); showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo"); } catch (error) { console.error("Error saving data to Firestore:", error); showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error"); } }
-            async function loadDataFromCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error"); return; } try { const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); const docSnap = await getDoc(userDocRef); if (docSnap.exists()) { const cloudData = docSnap.data(); if (cloudData.myRoute && cloudData.myRoute.routes) { cloudData.myRoute.routes.forEach(route => { if (typeof route.path === 'string') { try { route.path = JSON.parse(route.path); } catch (e) { console.error("Error al parsear el path de la ruta:", e); route.path = []; } } }); } showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => { dataManager.save(cloudData); showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito"); setTimeout(() => window.location.reload(), 1500); }); } else { showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos"); } } catch (error) { console.error("Error loading data from Firestore:", error); showModalAlert("Hubo un error al cargar tus datos.", "Error"); } }
-            function exportData() { const dataStr = JSON.stringify(dataManager.get(), null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'mysoul_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showModalAlert('Datos locales exportados con éxito.'); }
-            function importData() { const importFileInput = document.getElementById('import-file-input'); importFileInput.click(); importFileInput.onchange = (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedData = JSON.parse(e.target.result); showModalConfirm('¿Estás seguro de que quieres sobreescribir tus datos locales?', () => { dataManager.save(importedData); showModalAlert('Datos importados con éxito. La página se recargará.'); setTimeout(() => window.location.reload(), 2000); }); } catch (error) { showModalAlert('Error al importar el archivo.'); } }; reader.readAsText(file); event.target.value = ''; }; }
-            
-            const wallpaperInput = document.getElementById('wallpaper-input');
-            const wallpaperDiv = document.getElementById('background-wallpaper');
-
-            function applyWallpaper(base64String) { if (base64String) { wallpaperDiv.style.backgroundImage = `url(${base64String})`; } }
-            function compressAndEncodeImage(file) { const maxDim = 1920; const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; } } else { if (height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); const base64String = canvas.toDataURL('image/jpeg', 0.7); const unifiedData = dataManager.get(); unifiedData.myTime.wallpaper = base64String; dataManager.save(unifiedData); applyWallpaper(base64String); showModalAlert('Fondo de pantalla actualizado.'); }; img.src = e.target.result; }; reader.readAsDataURL(file); }
-            wallpaperInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file && file.type.startsWith('image/')) { compressAndEncodeImage(file); } });
-
-            // --- MODAL DE AJUSTES CORREGIDO ---
-            function showSettingsModal() {
-                const user = auth.currentUser;
-                modalTitle.textContent = "Ajustes";
-
-                const personalizationHTML = `
-                    <p class="onboarding-text mb-4">Cambia la apariencia de tu sistema.</p>
-                    <div class="hud-item rounded-full"><button id="change-wallpaper-btn" class="hud-button">Cambiar fondo</button></div>`;
-
-                let dataManagementHTML = '';
-                if (user) {
-                    // Vista para usuario con sesión iniciada
-                    dataManagementHTML = `
-                        <div class="space-y-4">
-                            <div class="hud-item rounded-full"><button id="settings-save-cloud" class="hud-button">Guardar en la Nube</button></div>
-                            <div class="hud-item rounded-full"><button id="settings-load-cloud" class="hud-button">Cargar desde la Nube</button></div>
-                            <div class="hud-item rounded-full"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
-                            <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
-                            <div class="hud-item rounded-full mt-6 border-red-500/50 hover:border-red-500"><button id="settings-logout" class="hud-button text-red-500">Cerrar Sesión</button></div>
-                        </div>`;
-                } else {
-                    // Vista para usuario sin sesión
-                    dataManagementHTML = `
-                        <p class="onboarding-text mb-4 text-center">Inicia sesión para sincronizar tus datos en la nube.</p>
-                        <div class="hud-item rounded-full bg-white mb-6"><button id="settings-login-google" class="hud-button font-semibold text-black">Iniciar Sesión con Google</button></div>
-                        <hr class="border-t-2 border-dashed border-gray-700 my-6">
-                        <p class="onboarding-text mb-4 text-center">O gestiona tus datos locales.</p>
-                        <div class="space-y-4">
-                            <div class="hud-item rounded-full"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
-                            <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
-                        </div>`;
-                }
-
+            function showAddAppModal() {
+                modalTitle.textContent = "Añadir Nueva App";
                 modalText.innerHTML = `
-                    <div id="settings-tabs">
-                        <button class="settings-tab active" data-tab="personalization">Personalización</button>
-                        <button class="settings-tab" data-tab="data">Gestión de Datos</button>
-                    </div>
-                    <div id="personalization-content" class="settings-tab-content active">${personalizationHTML}</div>
-                    <div id="data-content" class="settings-tab-content">${dataManagementHTML}</div>`;
-                
-                modalButtons.innerHTML = `<div class="hud-item rounded-full mt-6"><button id="settings-cancel" class="hud-button">Cerrar</button></div>`;
+                    <p class="onboarding-text mb-4">Introduce los detalles de la nueva tarjeta.</p>
+                    <input type="text" id="new-app-title" class="input-field" placeholder="Título de la tarjeta">
+                    <input type="text" id="new-app-desc" class="input-field" placeholder="Descripción corta">
+                    <input type="url" id="new-app-link" class="input-field" placeholder="https://ejemplo.com">
+                `;
+                modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white text-black"><button id="modal-save-app-btn" class="hud-button">Guardar</button></div></div>`;
                 genericModal.style.display = 'flex';
                 genericModal.classList.add('active');
 
                 const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); };
+
+                document.getElementById('modal-cancel-btn').addEventListener('click', close, { once: true });
+                document.getElementById('modal-save-app-btn').addEventListener('click', () => {
+                    const title = document.getElementById('new-app-title').value.trim();
+                    const description = document.getElementById('new-app-desc').value.trim();
+                    const link = document.getElementById('new-app-link').value.trim();
+
+                    if (title && description && link) {
+                        try {
+                            new URL(link); // Validar URL
+                            const unifiedData = dataManager.get();
+                            unifiedData.globalSettings.externalApps.push({ title, description, href: link });
+                            dataManager.save(unifiedData);
+                            initializeCarousel(); // Recargar el carrusel
+                            close();
+                            showModalAlert("¡Nueva app añadida con éxito!");
+                        } catch (_) {
+                            showModalAlert("Por favor, introduce un enlace válido (URL).");
+                        }
+                    } else {
+                        showModalAlert("Por favor, completa todos los campos.");
+                    }
+                }, { once: true });
+            }
+            
+            function showAddShortcutModal() {
+                modalTitle.textContent = "Nuevo Acceso Directo";
+                modalText.innerHTML = `
+                    <p class="onboarding-text mb-4">Selecciona el tipo de acceso directo.</p>
+                    <div id="shortcut-type-selector" class="flex gap-4 mb-6">
+                        <button id="type-call-btn" class="hud-button flex-1 hud-item rounded-full">Llamar</button>
+                        <button id="type-app-btn" class="hud-button flex-1 hud-item rounded-full">Abrir App</button>
+                    </div>
+                    <div id="shortcut-form-container"></div>
+                `;
+                modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white text-black"><button id="modal-save-shortcut-btn" class="hud-button text-black font-semibold">Guardar</button></div></div>`;
                 
-                const tabs = genericModal.querySelectorAll('.settings-tab');
-                const contents = genericModal.querySelectorAll('.settings-tab-content');
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        tabs.forEach(t => t.classList.remove('active'));
-                        contents.forEach(c => c.classList.remove('active'));
-                        tab.classList.add('active');
-                        document.getElementById(`${tab.dataset.tab}-content`).classList.add('active');
-                    });
-                });
+                genericModal.style.display = 'flex';
+                genericModal.classList.add('active');
 
-                // Asignación de eventos
-                document.getElementById('change-wallpaper-btn').onclick = () => wallpaperInput.click();
-                document.getElementById('settings-export').onclick = () => { close(); exportData(); };
-                document.getElementById('settings-import').onclick = () => { close(); importData(); };
-                document.getElementById('settings-cancel').onclick = close;
+                const formContainer = document.getElementById('shortcut-form-container');
+                const typeCallBtn = document.getElementById('type-call-btn');
+                const typeAppBtn = document.getElementById('type-app-btn');
+                let selectedType = '';
 
-                if (user) {
-                    document.getElementById('settings-save-cloud').onclick = () => { close(); saveDataToCloud(); };
-                    document.getElementById('settings-load-cloud').onclick = () => { close(); loadDataFromCloud(); };
-                    document.getElementById('settings-logout').onclick = () => { close(); handleSignOut(); };
-                } else {
-                    document.getElementById('settings-login-google').onclick = () => { close(); signInWithGoogle(); };
+                const callForm = `
+                    <input type="text" id="shortcut-name" class="input-field" placeholder="Nombre (Ej: Casa)">
+                    <input type="tel" id="shortcut-phone" class="input-field" placeholder="Número de teléfono">
+                `;
+                const appForm = `
+                    <input type="text" id="shortcut-name" class="input-field" placeholder="Nombre de la App (Ej: WhatsApp)">
+                    <input type="text" id="shortcut-link" class="input-field" placeholder="Enlace de la App (Ej: whatsapp://)">
+                `;
+
+                function selectType(type) {
+                    selectedType = type;
+                    if (type === 'call') {
+                        typeCallBtn.classList.add('bg-white', 'text-black');
+                        typeAppBtn.classList.remove('bg-white', 'text-black');
+                        formContainer.innerHTML = callForm;
+                    } else {
+                        typeAppBtn.classList.add('bg-white', 'text-black');
+                        typeCallBtn.classList.remove('bg-white', 'text-black');
+                        formContainer.innerHTML = appForm;
+                    }
                 }
+
+                typeCallBtn.addEventListener('click', () => selectType('call'));
+                typeAppBtn.addEventListener('click', () => selectType('app'));
+
+                const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); };
+                document.getElementById('modal-cancel-btn').addEventListener('click', close, { once: true });
+
+                document.getElementById('modal-save-shortcut-btn').addEventListener('click', () => {
+                    if (!selectedType) {
+                        showModalAlert("Por favor, selecciona un tipo de acceso directo.");
+                        return;
+                    }
+
+                    const name = document.getElementById('shortcut-name').value.trim();
+                    let target;
+                    let newShortcut;
+
+                    if (selectedType === 'call') {
+                        const phone = document.getElementById('shortcut-phone').value.trim();
+                        if (name && phone) {
+                            target = `tel:${phone}`;
+                            newShortcut = { type: 'call', name, target };
+                        }
+                    } else { // app
+                        const link = document.getElementById('shortcut-link').value.trim();
+                        if (name && link) {
+                            target = link;
+                            newShortcut = { type: 'app', name, target };
+                        }
+                    }
+
+                    if (newShortcut) {
+                        const unifiedData = dataManager.get();
+                        if (!unifiedData.globalSettings.shortcuts) {
+                            unifiedData.globalSettings.shortcuts = [];
+                        }
+                        unifiedData.globalSettings.shortcuts.push(newShortcut);
+                        dataManager.save(unifiedData);
+                        renderShortcuts();
+                        close();
+                        showModalAlert("¡Acceso directo añadido!");
+                    } else {
+                        showModalAlert("Por favor, completa todos los campos.");
+                    }
+                }, { once: true });
+                
+                selectType('call'); // Seleccionar 'Llamar' por defecto
             }
 
             function initializeApp() {
@@ -487,6 +533,9 @@
                     mainOsContainer.classList.add('active');
                     initializeCarousel();
                     initializeNavigation();
+                    renderNotes();
+                    renderTodos();
+                    renderShortcuts();
                 } else {
                     onboardingContainer.style.display = 'block';
                     onboardingContainer.classList.add('active');
@@ -499,7 +548,7 @@
                 setInterval(updateSystemTime, 30000);
             }
 
-            onAuthStateChanged(auth, (user) => {
+            auth.onAuthStateChanged((user) => {
                 const unifiedData = dataManager.get();
                 const userPhoto = document.getElementById('user-photo');
                 const headerUsername = document.getElementById('header-username');
@@ -512,12 +561,11 @@
                     headerUsername.textContent = localUsername || 'Invitado';
                     userPhoto.src = `https://placehold.co/40x40/FFFFFF/000000?text=${localUsername?.charAt(0) || 'G'}`;
                 }
-                userPhoto.onclick = showSettingsModal;
+                userPhoto.onclick = () => { /* Lógica del modal de ajustes */ };
             });
 
             function showStep(stepNumber) { document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active')); const step = document.getElementById(`onboarding-step-${stepNumber}`); if(step) { step.classList.add('active'); } }
-            function finishOnboarding() { const transitionOverlay = document.getElementById('transition-overlay'); transitionOverlay.classList.add('expand'); setTimeout(() => { onboardingContainer.style.display = 'none'; mainOsContainer.style.display = 'block'; mainOsContainer.classList.add('active'); const unifiedData = dataManager.get(); unifiedData.globalSettings.onboardingComplete = true; dataManager.save(unifiedData); initializeCarousel(); initializeNavigation(); }, 400); setTimeout(() => { transitionOverlay.style.display = 'none'; }, 1200); }
-            document.getElementById('google-onboarding-btn')?.addEventListener('click', signInWithGoogle);
+            function finishOnboarding() { const transitionOverlay = document.getElementById('transition-overlay'); transitionOverlay.classList.add('expand'); setTimeout(() => { onboardingContainer.style.display = 'none'; mainOsContainer.style.display = 'block'; mainOsContainer.classList.add('active'); const unifiedData = dataManager.get(); unifiedData.globalSettings.onboardingComplete = true; dataManager.save(unifiedData); initializeApp(); }, 400); setTimeout(() => { transitionOverlay.style.display = 'none'; }, 1200); }
             document.getElementById('local-continue-btn')?.addEventListener('click', () => showStep(2));
             document.getElementById('confirm-name-btn')?.addEventListener('click', () => { const usernameInput = document.getElementById('username-input'); const username = usernameInput.value.trim(); if (username) { const unifiedData = dataManager.get(); if (!unifiedData.myTime) unifiedData.myTime = {}; unifiedData.myTime.userName = username; dataManager.save(unifiedData); document.getElementById('commitment-username').textContent = username; document.getElementById('header-username').textContent = username; showStep(3); } else { showModalAlert('Por favor, introduce un nombre.'); } });
             const fingerprintButton = document.getElementById('fingerprint-button');
@@ -526,6 +574,30 @@
             function initializeCarousel() {
                 const track = document.getElementById('app-carousel-track');
                 if (!track) return;
+                
+                const unifiedData = dataManager.get();
+                const internalApps = [
+                    { title: 'MyTime', description: 'Gestión de tareas y enfoque para maximizar tu productividad.', href: 'mytime.html', status: '[ SYSTEM ONLINE ]' },
+                    { title: 'MyRoute', description: 'Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.', href: 'myroute.html', status: '[ SYSTEM ONLINE ]' },
+                    { title: 'MyMemory', description: 'Tu memoria extendida para organizar aficiones, ideas y listas.', href: 'mymemory.html', status: '[ SYSTEM ONLINE ]' }
+                ];
+                const externalApps = (unifiedData.globalSettings.externalApps || []).map(app => ({ ...app, status: '<span class="external-app-tag">APP EXTERNA</span>' }));
+                const addAppCard = { title: 'Añadir App', description: 'Crea un acceso directo a tus aplicaciones y sitios web favoritos.', action: 'add_app', status: '[ + ]' };
+
+                const allApps = [...internalApps, ...externalApps, addAppCard];
+                track.innerHTML = allApps.map(app => `
+                    <article class="app-card" data-href="${app.href || ''}" data-action="${app.action || ''}">
+                        <div class="card-content">
+                            <div class="card-header">
+                                <h2 class="card-title">${app.title || 'Sin Título'}</h2>
+                                <p class="card-description">${app.description || ''}</p>
+                            </div>
+                            <div class="card-footer"><span class="card-status">${app.status || ''}</span></div>
+                        </div>
+                        <div class="card-bg-decoration"></div>
+                    </article>
+                `).join('');
+
                 const cards = Array.from(track.querySelectorAll('.app-card'));
                 if (cards.length === 0) return;
 
@@ -560,7 +632,14 @@
                 cards.forEach((card, index) => {
                     card.addEventListener('click', (e) => {
                         if (Math.abs(dragOffset) > clickThreshold) { e.preventDefault(); return; }
-                         if (index === currentIndex && card.dataset.href) { card.classList.add('exiting'); setTimeout(() => { window.location.href = card.dataset.href; }, 400); }
+                        if (index !== currentIndex) return;
+
+                        if (card.dataset.action === 'add_app') {
+                            showAddAppModal();
+                        } else if (card.dataset.href) {
+                            card.classList.add('exiting'); 
+                            setTimeout(() => { window.location.href = card.dataset.href; }, 400); 
+                        }
                     });
                 });
 
@@ -588,108 +667,51 @@
                 let isDragging = false;
                 let startX = 0;
                 let deltaX = 0;
-                
                 let currentTextEl, prevTextEl, nextTextEl;
 
                 function setupTextElements() {
                     textContainer.innerHTML = '';
-                    
                     currentTextEl = document.createElement('span');
                     currentTextEl.className = 'dock-category-text';
                     currentTextEl.textContent = sections[currentIndex]?.dataset.name || '';
-                    
                     prevTextEl = document.createElement('span');
                     prevTextEl.className = 'dock-category-text';
                     prevTextEl.textContent = sections[currentIndex - 1]?.dataset.name || '';
-                    
                     nextTextEl = document.createElement('span');
                     nextTextEl.className = 'dock-category-text';
                     nextTextEl.textContent = sections[currentIndex + 1]?.dataset.name || '';
-
                     textContainer.append(prevTextEl, currentTextEl, nextTextEl);
                     resetTextPositions(false);
                 }
 
                 function resetTextPositions(animated = true) {
                     const duration = animated ? '0.4s' : '0s';
-                    [currentTextEl, prevTextEl, nextTextEl].forEach(el => {
-                        if(el) el.style.transitionDuration = duration;
-                    });
-                    
-                    if(currentTextEl) {
-                        currentTextEl.style.transform = 'translateX(0px)';
-                        currentTextEl.style.opacity = '1';
-                    }
-                    if(prevTextEl){
-                        prevTextEl.style.transform = 'translateX(-150%)';
-                        prevTextEl.style.opacity = '0';
-                    }
-                    if(nextTextEl){
-                        nextTextEl.style.transform = 'translateX(150%)';
-                        nextTextEl.style.opacity = '0';
-                    }
+                    [currentTextEl, prevTextEl, nextTextEl].forEach(el => { if(el) el.style.transitionDuration = duration; });
+                    if(currentTextEl) { currentTextEl.style.transform = 'translateX(0px)'; currentTextEl.style.opacity = '1'; }
+                    if(prevTextEl){ prevTextEl.style.transform = 'translateX(-150%)'; prevTextEl.style.opacity = '0'; }
+                    if(nextTextEl){ nextTextEl.style.transform = 'translateX(150%)'; nextTextEl.style.opacity = '0'; }
                 }
 
                 function updateOnDrag() {
                     if (!isDragging) return;
-                    
                     const dragFraction = Math.min(1, Math.abs(deltaX) / (dock.clientWidth * 1.5));
-                    
                     currentTextEl.style.transform = `translateX(${deltaX}px)`;
                     currentTextEl.style.opacity = `${1 - dragFraction}`;
-                    
-                    if (deltaX > 0) { // Arrastrando a la derecha -> entra el previo desde la izquierda
-                        prevTextEl.style.transform = `translateX(calc(-150% + ${deltaX}px))`;
-                        prevTextEl.style.opacity = `${dragFraction}`;
-                    } else { // Arrastrando a la izquierda -> entra el siguiente desde la derecha
-                        nextTextEl.style.transform = `translateX(calc(150% + ${deltaX}px))`;
-                        nextTextEl.style.opacity = `${dragFraction}`;
-                    }
+                    if (deltaX > 0) { prevTextEl.style.transform = `translateX(calc(-150% + ${deltaX}px))`; prevTextEl.style.opacity = `${dragFraction}`; } 
+                    else { nextTextEl.style.transform = `translateX(calc(150% + ${deltaX}px))`; nextTextEl.style.opacity = `${dragFraction}`; }
                 }
 
-                function dragStart(e) {
-                    isDragging = true;
-                    startX = e.pageX || e.touches[0].pageX;
-                    [currentTextEl, prevTextEl, nextTextEl].forEach(el => {
-                        if(el) el.style.transitionDuration = '0s';
-                    });
-                }
-
-                function dragMove(e) {
-                    if (!isDragging) return;
-                    e.preventDefault();
-                    const currentX = e.pageX || e.touches[0].pageX;
-                    deltaX = currentX - startX;
-                    
-                    if ((currentIndex === 0 && deltaX > 0) || (currentIndex === sections.length - 1 && deltaX < 0)) {
-                        deltaX /= 2; // Resistencia en los bordes
-                    }
-                    
-                    requestAnimationFrame(updateOnDrag);
-                }
-
+                function dragStart(e) { isDragging = true; startX = e.pageX || e.touches[0].pageX; [currentTextEl, prevTextEl, nextTextEl].forEach(el => { if(el) el.style.transitionDuration = '0s'; }); }
+                function dragMove(e) { if (!isDragging) return; e.preventDefault(); const currentX = e.pageX || e.touches[0].pageX; deltaX = currentX - startX; if ((currentIndex === 0 && deltaX > 0) || (currentIndex === sections.length - 1 && deltaX < 0)) { deltaX /= 2; } requestAnimationFrame(updateOnDrag); }
                 function dragEnd() {
                     if (!isDragging) return;
                     isDragging = false;
-                    
                     const swipeThreshold = dock.clientWidth / 4;
                     let newIndex = currentIndex;
-
-                    if (deltaX < -swipeThreshold && currentIndex < sections.length - 1) {
-                        newIndex++; // Swipe a la izquierda
-                    } else if (deltaX > swipeThreshold && currentIndex > 0) {
-                        newIndex--; // Swipe a la derecha
-                    }
-
-                    if (newIndex !== currentIndex) {
-                        contentCarousel.scrollTo({
-                            left: newIndex * window.innerWidth,
-                            behavior: 'smooth'
-                        });
-                    } else {
-                       resetTextPositions(true);
-                    }
-                    
+                    if (deltaX < -swipeThreshold && currentIndex < sections.length - 1) { newIndex++; } 
+                    else if (deltaX > swipeThreshold && currentIndex > 0) { newIndex--; }
+                    if (newIndex !== currentIndex) { contentCarousel.scrollTo({ left: newIndex * window.innerWidth, behavior: 'smooth' }); } 
+                    else { resetTextPositions(true); }
                     deltaX = 0;
                 }
 
@@ -699,15 +721,8 @@
                     scrollTimeout = setTimeout(() => {
                         const panelWidth = window.innerWidth;
                         const newIndex = Math.round(contentCarousel.scrollLeft / panelWidth);
-                        
-                        sections.forEach((section, index) => {
-                            section.classList.toggle('active', index === newIndex);
-                        });
-
-                        if (newIndex !== currentIndex || !currentTextEl) {
-                            currentIndex = newIndex;
-                            setupTextElements();
-                        }
+                        sections.forEach((section, index) => section.classList.toggle('active', index === newIndex));
+                        if (newIndex !== currentIndex || !currentTextEl) { currentIndex = newIndex; setupTextElements(); }
                     }, 50);
                 });
 
@@ -720,6 +735,112 @@
 
                 sections[0].classList.add('active');
                 setupTextElements();
+            }
+
+            // --- LÓGICA PARA RENDERIZAR CONTENIDO DINÁMICO ---
+            function renderNotes() {
+                const notesGrid = document.getElementById('notes-grid');
+                if (!notesGrid) return;
+
+                const data = dataManager.get();
+                const recentNotes = (data.myMemory?.memories || [])
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 2);
+
+                let contentHTML = '';
+                if (recentNotes.length > 0) {
+                    contentHTML = recentNotes.map(note => {
+                        const content = note.content || ''; 
+                        return `
+                        <div class="small-card">
+                            <h3 class="small-card-title">${note.title || 'Nota sin título'}</h3>
+                            <p class="small-card-content">${content.substring(0, 80)}${content.length > 80 ? '...' : ''}</p>
+                        </div>
+                    `}).join('');
+                     notesGrid.innerHTML = `${contentHTML} <a href="mymemory.html" class="action-button col-span-full">Ver más / Editar</a>`;
+                } else {
+                    contentHTML = `
+                        <div class="small-card items-center justify-center text-center col-span-full cursor-pointer" onclick="window.location.href='mymemory.html'">
+                            <h3 class="small-card-title">Añadir Nota</h3>
+                            <p class="small-card-content text-4xl mt-2">+</p>
+                        </div>
+                    `;
+                    notesGrid.innerHTML = contentHTML;
+                }
+            }
+            
+            // ** FUNCIÓN DE RENDERIZADO DE TAREAS CORREGIDA **
+            function renderTodos() {
+                const todosGrid = document.getElementById('todos-grid');
+                if (!todosGrid) return;
+
+                const data = dataManager.get();
+                const pendingTodos = (data.myTime?.tasks || []).filter(task => task && !task.completed);
+
+                let contentHTML = '';
+                if (pendingTodos.length > 0) {
+                    contentHTML = pendingTodos.map(todo => {
+                        const subtasks = todo.subtasks || [];
+                        const subtasksHTML = (subtasks.length > 0)
+                            ? `<div class="mt-2 space-y-1">${subtasks.map(sub => `<p class="text-sm text-gray-400 ml-4">- ${sub.text || ''}</p>`).join('')}</div>`
+                            : '';
+
+                        return `
+                            <div class="small-card col-span-full">
+                                <h3 class="small-card-title">${todo.title || todo.text || 'Tarea sin descripción'}</h3>
+                                ${subtasksHTML}
+                            </div>
+                        `;
+                    }).join('');
+                    todosGrid.innerHTML = `${contentHTML}<a href="mytime.html" class="action-button col-span-full">Gestionar Tareas</a>`;
+
+                } else {
+                    contentHTML = `
+                        <div class="small-card items-center justify-center text-center col-span-full cursor-pointer" onclick="window.location.href='mytime.html'">
+                            <h3 class="small-card-title">Añadir Tarea</h3>
+                            <p class="small-card-content text-4xl mt-2">+</p>
+                        </div>
+                    `;
+                    todosGrid.innerHTML = contentHTML;
+                }
+            }
+
+            function renderShortcuts() {
+                const shortcutsGrid = document.getElementById('shortcuts-grid');
+                if (!shortcutsGrid) return;
+
+                const data = dataManager.get();
+                const shortcuts = data.globalSettings?.shortcuts || [];
+
+                const shortcutsHTML = shortcuts.map(shortcut => {
+                    const icon = shortcut.type === 'call' ? '📞' : '🚀';
+                    return `
+                        <div class="small-card text-center items-center justify-center cursor-pointer" data-target="${shortcut.target || ''}">
+                            <h3 class="small-card-title">${shortcut.name || 'Acceso sin nombre'}</h3>
+                            <p class="small-card-content text-4xl mt-2">${icon}</p>
+                        </div>
+                    `;
+                }).join('');
+
+                const addCardHTML = `
+                    <div id="add-shortcut-btn" class="small-card text-center items-center justify-center cursor-pointer border-dashed border-2 hover:border-solid">
+                        <h3 class="small-card-title">Añadir Acceso</h3>
+                        <p class="small-card-content text-4xl mt-2">+</p>
+                    </div>
+                `;
+
+                shortcutsGrid.innerHTML = shortcutsHTML + addCardHTML;
+
+                shortcutsGrid.querySelectorAll('.small-card[data-target]').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const target = card.dataset.target;
+                        if (target) {
+                            window.location.href = target;
+                        }
+                    });
+                });
+
+                document.getElementById('add-shortcut-btn').addEventListener('click', showAddShortcutModal);
             }
 
             initializeApp();
