@@ -409,6 +409,16 @@
             async function saveDataToCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error"); return; } try { const dataToSave = dataManager.get(); const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); await setDoc(userDocRef, dataToSave); showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo"); } catch (error) { console.error("Error saving data to Firestore:", error); showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error"); } }
             async function loadDataFromCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error"); return; } try { const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); const docSnap = await getDoc(userDocRef); if (docSnap.exists()) { const cloudData = docSnap.data(); showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => { dataManager.save(cloudData); showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito"); setTimeout(() => window.location.reload(), 1500); }); } else { showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos"); } } catch (error) { console.error("Error loading data from Firestore:", error); showModalAlert("Hubo un error al cargar tus datos.", "Error"); } }
             
+            function exportData() { const dataStr = JSON.stringify(dataManager.get(), null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'mysoul_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showModalAlert('Datos locales exportados con éxito.'); }
+            function importData() { const importFileInput = document.getElementById('import-file-input'); importFileInput.click(); importFileInput.onchange = (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedData = JSON.parse(e.target.result); showModalConfirm('¿Estás seguro de que quieres sobreescribir tus datos locales?', () => { dataManager.save(importedData); showModalAlert('Datos importados con éxito. La página se recargará.'); setTimeout(() => window.location.reload(), 2000); }); } catch (error) { showModalAlert('Error al importar el archivo.'); } }; reader.readAsText(file); event.target.value = ''; }; }
+            
+            const wallpaperInput = document.getElementById('wallpaper-input');
+            const wallpaperDiv = document.getElementById('background-wallpaper');
+
+            function applyWallpaper(base64String) { if (base64String) { wallpaperDiv.style.backgroundImage = `url(${base64String})`; } }
+            function compressAndEncodeImage(file) { const maxDim = 1920; const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; } } else { if (height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); const base64String = canvas.toDataURL('image/jpeg', 0.7); const unifiedData = dataManager.get(); unifiedData.myTime.wallpaper = base64String; dataManager.save(unifiedData); applyWallpaper(base64String); showModalAlert('Fondo de pantalla actualizado.'); }; img.src = e.target.result; }; reader.readAsDataURL(file); }
+            wallpaperInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file && file.type.startsWith('image/')) { compressAndEncodeImage(file); } });
+
             function showSettingsModal() {
                 const user = auth.currentUser;
                 modalTitle.textContent = "Ajustes";
@@ -423,12 +433,20 @@
                         <div class="space-y-4">
                             <div class="hud-item rounded-full"><button id="settings-save-cloud" class="hud-button">Guardar en la Nube</button></div>
                             <div class="hud-item rounded-full"><button id="settings-load-cloud" class="hud-button">Cargar desde la Nube</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
                             <div class="hud-item rounded-full mt-6 border-red-500/50 hover:border-red-500"><button id="settings-logout" class="hud-button text-red-500">Cerrar Sesión</button></div>
                         </div>`;
                 } else {
                     dataManagementHTML = `
                         <p class="onboarding-text mb-4 text-center">Inicia sesión para sincronizar tus datos en la nube.</p>
-                        <div class="hud-item rounded-full bg-white mb-6"><button id="settings-login-google" class="hud-button font-semibold text-black">Iniciar Sesión con Google</button></div>`;
+                        <div class="hud-item rounded-full bg-white mb-6"><button id="settings-login-google" class="hud-button font-semibold text-black">Iniciar Sesión con Google</button></div>
+                        <hr class="border-t-2 border-dashed border-gray-700 my-6">
+                        <p class="onboarding-text mb-4 text-center">O gestiona tus datos locales.</p>
+                        <div class="space-y-4">
+                            <div class="hud-item rounded-full"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
+                        </div>`;
                 }
 
                 modalText.innerHTML = `
@@ -463,8 +481,12 @@
                     document.getElementById('settings-save-cloud').onclick = () => { close(); saveDataToCloud(); };
                     document.getElementById('settings-load-cloud').onclick = () => { close(); loadDataFromCloud(); };
                     document.getElementById('settings-logout').onclick = () => { close(); handleSignOut(); };
+                    document.getElementById('settings-export').onclick = () => { close(); exportData(); };
+                    document.getElementById('settings-import').onclick = () => { close(); importData(); };
                 } else {
                     document.getElementById('settings-login-google').onclick = () => { close(); signInWithGoogle(); };
+                    document.getElementById('settings-export').onclick = () => { close(); exportData(); };
+                    document.getElementById('settings-import').onclick = () => { close(); importData(); };
                 }
             }
 
