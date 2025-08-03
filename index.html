@@ -358,12 +358,10 @@
     <input type="file" id="wallpaper-input" class="hidden" accept="image/*">
 
     <script type="module">
-        // ** FIREBASE REAL REACTIVADO **
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // ** IMPORTANTE: Reemplaza esto con tu propia configuración de Firebase **
         const firebaseConfig = {
             apiKey: "AIzaSyB1mdncFubF9Nj7s64rslYtwUQmfQUhm3U",
             authDomain: "mysoul-backupagent.firebaseapp.com",
@@ -384,22 +382,12 @@
             
             function getDefaultUnifiedState() { 
                 return { 
-                    myTime: { 
-                        userName: null, 
-                        tasks: [], // Inicia vacío
-                        wallpaper: null 
-                    }, 
-                    myMemory: { 
-                        memories: [] // Inicia vacío
-                    }, 
-                    globalSettings: { 
-                        onboardingComplete: false,
-                        externalApps: [],
-                        shortcuts: [] // Inicia vacío
-                    } 
+                    myTime: { userName: null, tasks: [], wallpaper: null }, 
+                    myMemory: { memories: [] }, 
+                    globalSettings: { onboardingComplete: false, externalApps: [], shortcuts: [] } 
                 }; 
             }
-            function getUnifiedData() { const data = localStorage.getItem(UNIFIED_STORAGE_KEY); if (data) { try { const parsedData = JSON.parse(data); const defaultState = getDefaultUnifiedState(); return { ...defaultState, ...parsedData, myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) }, myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) }, globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) }, }; } catch (error) { console.error("Error al parsear datos unificados, se retorna al estado por defecto:", error); return getDefaultUnifiedState(); } } return getDefaultUnifiedState(); }
+            function getUnifiedData() { const data = localStorage.getItem(UNIFIED_STORAGE_KEY); if (data) { try { const parsedData = JSON.parse(data); const defaultState = getDefaultUnifiedState(); return { ...defaultState, ...parsedData, myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) }, myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) }, globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) }, }; } catch (error) { console.error("Error al parsear datos unificados:", error); return getDefaultUnifiedState(); } } return getDefaultUnifiedState(); }
             function saveUnifiedData(data) { try { localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(data)); } catch (error) { console.error("Error al guardar los datos unificados:", error); } }
             return { get: getUnifiedData, save: saveUnifiedData };
         })();
@@ -413,15 +401,14 @@
             const modalButtons = document.getElementById('generic-modal-buttons');
 
             function showModalAlert(message, title = 'Notificación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="hud-item rounded-full"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); document.getElementById('modal-ok-btn').addEventListener('click', () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }, { once: true }); };
-            
-            function signInWithGoogle() {
-                signInWithPopup(auth, provider)
-                    .catch((error) => {
-                        console.error("Error durante el inicio de sesión con Google:", error);
-                        showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación");
-                    });
-            }
+            function showModalConfirm(message, onConfirm, title = 'Confirmación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white text-black"><button id="modal-confirm-btn" class="hud-button">Confirmar</button></div></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); const confirmBtn = document.getElementById('modal-confirm-btn'); const cancelBtn = document.getElementById('modal-cancel-btn'); const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }; confirmBtn.addEventListener('click', () => { close(); onConfirm?.(); }, { once: true }); cancelBtn.addEventListener('click', close, { once: true }); };
 
+            function signInWithGoogle() { signInWithPopup(auth, provider).catch((error) => { console.error("Error durante el inicio de sesión con Google:", error); showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación"); }); }
+            function handleSignOut() { signOut(auth).then(() => { window.location.reload(); }).catch((error) => { console.error("Error al cerrar sesión:", error); }); }
+            
+            async function saveDataToCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error"); return; } try { const dataToSave = dataManager.get(); const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); await setDoc(userDocRef, dataToSave); showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo"); } catch (error) { console.error("Error saving data to Firestore:", error); showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error"); } }
+            async function loadDataFromCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error"); return; } try { const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); const docSnap = await getDoc(userDocRef); if (docSnap.exists()) { const cloudData = docSnap.data(); showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => { dataManager.save(cloudData); showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito"); setTimeout(() => window.location.reload(), 1500); }); } else { showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos"); } } catch (error) { console.error("Error loading data from Firestore:", error); showModalAlert("Hubo un error al cargar tus datos.", "Error"); } }
+            
             function showSettingsModal() {
                 const user = auth.currentUser;
                 modalTitle.textContent = "Ajustes";
@@ -432,17 +419,16 @@
 
                 let dataManagementHTML = '';
                 if (user) {
-                    dataManagementHTML = `<p class="onboarding-text">Gestión de datos en la nube no implementada en este mock.</p>`;
+                    dataManagementHTML = `
+                        <div class="space-y-4">
+                            <div class="hud-item rounded-full"><button id="settings-save-cloud" class="hud-button">Guardar en la Nube</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-load-cloud" class="hud-button">Cargar desde la Nube</button></div>
+                            <div class="hud-item rounded-full mt-6 border-red-500/50 hover:border-red-500"><button id="settings-logout" class="hud-button text-red-500">Cerrar Sesión</button></div>
+                        </div>`;
                 } else {
                     dataManagementHTML = `
                         <p class="onboarding-text mb-4 text-center">Inicia sesión para sincronizar tus datos en la nube.</p>
-                        <div class="hud-item rounded-full bg-white mb-6"><button id="settings-login-google" class="hud-button font-semibold text-black">Iniciar Sesión con Google</button></div>
-                        <hr class="border-t-2 border-dashed border-gray-700 my-6">
-                        <p class="onboarding-text mb-4 text-center">O gestiona tus datos locales.</p>
-                        <div class="space-y-4">
-                            <div class="hud-item rounded-full"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
-                            <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
-                        </div>`;
+                        <div class="hud-item rounded-full bg-white mb-6"><button id="settings-login-google" class="hud-button font-semibold text-black">Iniciar Sesión con Google</button></div>`;
                 }
 
                 modalText.innerHTML = `
@@ -473,11 +459,12 @@
                 document.getElementById('change-wallpaper-btn').onclick = () => document.getElementById('wallpaper-input').click();
                 document.getElementById('settings-cancel').onclick = close;
 
-                if (!user) {
-                    document.getElementById('settings-login-google').onclick = () => {
-                        close();
-                        signInWithGoogle();
-                    };
+                if (user) {
+                    document.getElementById('settings-save-cloud').onclick = () => { close(); saveDataToCloud(); };
+                    document.getElementById('settings-load-cloud').onclick = () => { close(); loadDataFromCloud(); };
+                    document.getElementById('settings-logout').onclick = () => { close(); handleSignOut(); };
+                } else {
+                    document.getElementById('settings-login-google').onclick = () => { close(); signInWithGoogle(); };
                 }
             }
 
