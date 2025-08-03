@@ -358,8 +358,25 @@
     <input type="file" id="wallpaper-input" class="hidden" accept="image/*">
 
     <script type="module">
-        // Mock de Firebase para desarrollo local sin conexión
-        const auth = { currentUser: null, onAuthStateChanged: (callback) => callback(null) };
+        // ** FIREBASE REAL REACTIVADO **
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // ** IMPORTANTE: Reemplaza esto con tu propia configuración de Firebase **
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
 
         const dataManager = (() => {
             const UNIFIED_STORAGE_KEY = 'mySoul-data-v1';
@@ -396,7 +413,14 @@
 
             function showModalAlert(message, title = 'Notificación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="hud-item rounded-full"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); document.getElementById('modal-ok-btn').addEventListener('click', () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }, { once: true }); };
             
-            // ** FUNCIÓN DE AJUSTES CORREGIDA Y RE-IMPLEMENTADA **
+            function signInWithGoogle() {
+                signInWithPopup(auth, provider)
+                    .catch((error) => {
+                        console.error("Error durante el inicio de sesión con Google:", error);
+                        showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación");
+                    });
+            }
+
             function showSettingsModal() {
                 const user = auth.currentUser;
                 modalTitle.textContent = "Ajustes";
@@ -447,6 +471,13 @@
 
                 document.getElementById('change-wallpaper-btn').onclick = () => document.getElementById('wallpaper-input').click();
                 document.getElementById('settings-cancel').onclick = close;
+
+                if (!user) {
+                    document.getElementById('settings-login-google').onclick = () => {
+                        close();
+                        signInWithGoogle();
+                    };
+                }
             }
 
             function showAddAppModal() {
@@ -601,7 +632,7 @@
                 setInterval(updateSystemTime, 30000);
             }
 
-            auth.onAuthStateChanged((user) => {
+            onAuthStateChanged(auth, (user) => {
                 const unifiedData = dataManager.get();
                 const userPhoto = document.getElementById('user-photo');
                 const headerUsername = document.getElementById('header-username');
@@ -614,12 +645,13 @@
                     headerUsername.textContent = localUsername || 'Invitado';
                     userPhoto.src = `https://placehold.co/40x40/FFFFFF/000000?text=${localUsername?.charAt(0) || 'G'}`;
                 }
-                // ** EVENT LISTENER CORREGIDO **
                 userPhoto.onclick = showSettingsModal;
             });
 
             function showStep(stepNumber) { document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active')); const step = document.getElementById(`onboarding-step-${stepNumber}`); if(step) { step.classList.add('active'); } }
             function finishOnboarding() { const transitionOverlay = document.getElementById('transition-overlay'); transitionOverlay.classList.add('expand'); setTimeout(() => { onboardingContainer.style.display = 'none'; mainOsContainer.style.display = 'block'; mainOsContainer.classList.add('active'); const unifiedData = dataManager.get(); unifiedData.globalSettings.onboardingComplete = true; dataManager.save(unifiedData); initializeApp(); }, 400); setTimeout(() => { transitionOverlay.style.display = 'none'; }, 1200); }
+            
+            document.getElementById('google-onboarding-btn')?.addEventListener('click', signInWithGoogle);
             document.getElementById('local-continue-btn')?.addEventListener('click', () => showStep(2));
             document.getElementById('confirm-name-btn')?.addEventListener('click', () => { const usernameInput = document.getElementById('username-input'); const username = usernameInput.value.trim(); if (username) { const unifiedData = dataManager.get(); if (!unifiedData.myTime) unifiedData.myTime = {}; unifiedData.myTime.userName = username; dataManager.save(unifiedData); document.getElementById('commitment-username').textContent = username; document.getElementById('header-username').textContent = username; showStep(3); } else { showModalAlert('Por favor, introduce un nombre.'); } });
             const fingerprintButton = document.getElementById('fingerprint-button');
