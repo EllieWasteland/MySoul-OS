@@ -18,7 +18,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@400;600&family=Montserrat:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* Contenido de style.css integrado */
         :root {
             --bg-color: #000000;
             --text-primary: #FFFFFF;
@@ -34,13 +33,31 @@
             background-color: var(--bg-color);
             color: var(--text-primary);
             font-family: 'Montserrat', sans-serif;
-            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
-            background-size: 24px 24px;
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
+        
+        /* --- Fondo de pantalla y superposición de puntos --- */
+        #background-wallpaper {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background-size: cover;
+            background-position: center;
+            filter: blur(20px) brightness(0.8);
+            transform: scale(1.1); /* Evita bordes vacíos por el blur */
+        }
 
+        #dots-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* --- Estructura Principal --- */
         #onboarding-container,
         #main-os-container,
         #generic-modal {
@@ -52,68 +69,6 @@
             display: block;
         }
 
-        .onboarding-step {
-            display: none;
-            opacity: 0;
-            position: fixed;
-            inset: 0;
-            z-index: 200;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 2rem;
-            background-color: var(--bg-color);
-            transition: opacity 0.5s ease-in-out;
-        }
-        .onboarding-step.active {
-            display: flex;
-            opacity: 1;
-        }
-        .onboarding-title {
-            font-family: 'Bitcount Prop Single', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 600;
-            letter-spacing: -0.03em;
-            line-height: 1;
-        }
-        .onboarding-text {
-            font-size: 1.125rem;
-            color: var(--text-secondary);
-            margin-top: 1rem;
-            max-width: 500px;
-        }
-        .hud-item {
-            border: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-        }
-        .hud-item:hover {
-            border-color: var(--text-primary);
-            background-color: var(--highlight-color);
-        }
-        .hud-button, .input-field {
-            width: 100%;
-            padding: 0.8rem 1.5rem;
-            background: transparent;
-            color: var(--text-primary);
-            font-weight: 500;
-            border: none;
-            outline: none;
-            cursor: pointer;
-        }
-        #fingerprint-button {
-            position: relative; width: 100px; height: 100px; border-radius: 50%;
-            border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.3s ease;
-        }
-        #fingerprint-button .icon { width: 50px; height: 50px; color: var(--text-secondary); transition: color 0.3s ease; }
-        #fingerprint-fill { position: absolute; top: 50%; left: 50%; width: 0; height: 0; background-color: var(--text-primary); border-radius: 50%; transform: translate(-50%, -50%); transition: width 2s ease-out, height 2s ease-out; }
-        #fingerprint-button.holding #fingerprint-fill { width: 100px; height: 100px; }
-        #fingerprint-button.holding .icon { color: var(--bg-color); z-index: 1; }
-        #transition-overlay { position: fixed; inset: 0; background: var(--text-primary); z-index: 250; transform: scale(0); border-radius: 50%; pointer-events: none; transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1); }
-        #transition-overlay.expand { transform: scale(2.5); }
-        .modal-content-wrapper { background-color: var(--bg-color); border: 1px solid var(--border-color); padding: 2rem; max-width: 500px; }
-
         #main-os-container {
             position: relative;
             width: 100vw;
@@ -122,10 +77,7 @@
             opacity: 0;
             animation: fadeInOS 0.8s 0.2s forwards;
         }
-
-        @keyframes fadeInOS {
-            to { opacity: 1; }
-        }
+        @keyframes fadeInOS { to { opacity: 1; } }
 
         #main-header {
             position: fixed;
@@ -138,321 +90,259 @@
             align-items: center;
             z-index: 100;
         }
+        
+        /* --- Contenedor de Contenido Principal --- */
+        #main-content-carousel {
+            display: flex;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            height: 100vh;
+            width: 100vw;
+        }
 
-        #app-carousel-wrapper {
+        .dock-content {
+            flex: 0 0 100vw;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
             perspective: 1200px;
+            padding-top: 8rem;
+            padding-bottom: 8rem;
+            box-sizing: border-box;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        
+        .dock-content.active {
+            opacity: 1;
+            visibility: visible;
         }
 
+
+        /* --- Estilos del Carrusel de Apps (Hub) --- */
         #app-carousel-track {
             position: relative;
             width: 100%;
-            height: 65vh;
+            height: 100%;
             max-height: 500px;
             transform-style: preserve-3d;
             cursor: grab;
-            visibility: hidden; /* Previene parpadeo inicial */
         }
 
         .app-card {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            margin: auto;
-            width: clamp(280px, 75vw, 420px);
-            height: 100%;
-            background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            user-select: none;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: absolute; top: 0; left: 0; right: 0; margin: auto;
+            width: clamp(280px, 75vw, 420px); height: 100%;
+            background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 24px;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            user-select: none; display: flex; flex-direction: column;
+            overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
         }
+        .app-card:hover { border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 0 20px 0px var(--card-glow); }
+        .app-card.exiting { transform: scale(1.1) !important; opacity: 0 !important; }
+        .card-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem; position: relative; z-index: 2; }
+        .card-title { font-family: 'Bitcount Prop Single', sans-serif; font-size: clamp(2.5rem, 8vw, 3.5rem); font-weight: 600; line-height: 1; color: var(--text-primary); }
+        .card-description { font-size: 1rem; color: var(--text-secondary); margin-top: 0.75rem; max-width: 90%; }
+        .card-status { font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 0.1em; }
+        .card-bg-decoration { position: absolute; bottom: -50%; left: -25%; width: 150%; height: 100%; background-image: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 60%); z-index: 1; transition: transform 0.5s ease; }
+        .app-card:hover .card-bg-decoration { transform: scale(1.2); }
 
-        .app-card:hover {
-            border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 0 20px 0px var(--card-glow);
-        }
+        /* --- Estilos para Contenido de Nuevas Categorías --- */
+        .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 1.5rem; width: 100%; max-width: 1200px; height: 100%; overflow-y: auto; align-content: start; }
+        .small-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; backdrop-filter: blur(10px); padding: 1.5rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; }
+        .small-card:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.3); }
+        .small-card-title { font-size: 1.5rem; font-weight: 600; }
+        .small-card-content { font-size: 1rem; color: var(--text-secondary); }
 
-        .app-card.exiting {
-            transform: scale(1.1) !important;
-            opacity: 0 !important;
-        }
-
-        .card-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 2rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        .card-title {
-            font-family: 'Bitcount Prop Single', sans-serif;
-            font-size: clamp(2.5rem, 8vw, 3.5rem);
-            font-weight: 600;
-            line-height: 1;
-            color: var(--text-primary);
-        }
-
-        .card-description {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            margin-top: 0.75rem;
-            max-width: 90%;
-        }
-
-        .card-status {
-            font-family: 'Roboto Mono', monospace;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            letter-spacing: 0.1em;
-        }
-
-        .card-bg-decoration {
-            position: absolute;
-            bottom: -50%;
-            left: -25%;
-            width: 150%;
-            height: 100%;
-            background-image: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 60%);
-            z-index: 1;
-            transition: transform 0.5s ease;
-        }
-
-        .app-card:hover .card-bg-decoration {
-            transform: scale(1.2);
-        }
-
-        #carousel-navigation {
+        /* --- Barra de Navegación Inferior (Dock) --- */
+        #bottom-dock {
             position: fixed;
-            bottom: 0;
-            width: 100%;
-            padding: 2.5rem;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .dots-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.5rem;
-            background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            min-width: 180px;
+            max-width: min(90vw, 300px);
+            background-color: #FFFFFF;
+            color: #000000;
             border-radius: 9999px;
-            backdrop-filter: blur(10px);
+            z-index: 150;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.1);
+            cursor: grab;
+            user-select: none;
+        }
+        #bottom-dock:active { cursor: grabbing; }
+
+        #dock-text-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 42px;
+            overflow: hidden;
+            padding: 0.75rem 2rem;
         }
 
-        .nav-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: var(--border-color);
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            transition: all 0.3s ease;
+        .dock-category-text {
+            position: absolute;
+            font-size: 1.1rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
         }
 
-        .nav-dot.active {
-            background-color: var(--text-primary);
-            transform: scale(1.4);
-        }
-
-        .swipe-hint {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            text-align: center;
-            pointer-events: none;
-            opacity: 0.7;
-        }
+        /* --- Estilos de Onboarding y Modal --- */
+        .onboarding-step { display: none; opacity: 0; position: fixed; inset: 0; z-index: 200; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; background-color: var(--bg-color); transition: opacity 0.5s ease-in-out; }
+        .onboarding-step.active { display: flex; opacity: 1; }
+        .onboarding-title { font-family: 'Bitcount Prop Single', sans-serif; font-size: 2.5rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+        .onboarding-text { font-size: 1.125rem; color: var(--text-secondary); margin-top: 1rem; max-width: 500px; }
+        .hud-item { border: 1px solid var(--border-color); transition: all 0.2s ease; }
+        .hud-item:hover { border-color: var(--text-primary); background-color: var(--highlight-color); }
+        .hud-button, .input-field { width: 100%; padding: 0.8rem 1.5rem; background: transparent; color: var(--text-primary); font-weight: 500; border: none; outline: none; cursor: pointer; }
+        #fingerprint-button { position: relative; width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
+        #fingerprint-button .icon { width: 50px; height: 50px; color: var(--text-secondary); transition: color 0.3s ease; }
+        #fingerprint-fill { position: absolute; top: 50%; left: 50%; width: 0; height: 0; background-color: var(--text-primary); border-radius: 50%; transform: translate(-50%, -50%); transition: width 2s ease-out, height 2s ease-out; }
+        #fingerprint-button.holding #fingerprint-fill { width: 100px; height: 100px; }
+        #fingerprint-button.holding .icon { color: var(--bg-color); z-index: 1; }
+        #transition-overlay { position: fixed; inset: 0; background: var(--text-primary); z-index: 250; transform: scale(0); border-radius: 50%; pointer-events: none; transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1); }
+        #transition-overlay.expand { transform: scale(2.5); }
+        .modal-content-wrapper { background-color: var(--card-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); padding: 2rem; max-width: 500px; width: 90vw; border-radius: 24px; }
+        
+        /* --- NUEVOS ESTILOS PARA MODAL DE AJUSTES --- */
+        #settings-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+        .settings-tab { padding: 0.75rem 1.5rem; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s ease; }
+        .settings-tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+        .settings-tab-content { display: none; }
+        .settings-tab-content.active { display: block; animation: fadeInContent 0.3s forwards; }
+        @keyframes fadeInContent { from { opacity: 0; } to { opacity: 1; } }
 
         @media (max-width: 640px) {
-            #main-header {
-                padding: 1rem 1.5rem;
-            }
-            .card-title {
-                font-size: 2.2rem;
-            }
-            .card-description {
-                font-size: 0.9rem;
-            }
-            #carousel-navigation {
-                padding: 1.5rem;
-            }
-            .onboarding-title {
-                font-size: 2rem;
-            }
+            #main-header { padding: 1rem 1.5rem; }
+            .card-title { font-size: 2.2rem; }
+            .card-description { font-size: 0.9rem; }
+            .onboarding-title { font-size: 2rem; }
+            #bottom-dock { bottom: 1rem; }
         }
     </style>
 </head>
 <body>
+    <!-- Div para el fondo de pantalla -->
+    <div id="background-wallpaper"></div>
+    <div id="dots-overlay"></div>
 
     <!-- ================================================================== -->
-    <!-- SECCIONES DE ONBOARDING Y MODAL (Reutilizadas del original)      -->
+    <!-- SECCIONES DE ONBOARDING Y MODAL (Sin cambios en la estructura)     -->
     <!-- ================================================================== -->
-
     <div id="onboarding-container">
         <!-- Paso 1: Bienvenida -->
         <div id="onboarding-step-1" class="onboarding-step">
             <h2 class="onboarding-title">MySoul</h2>
             <p class="onboarding-text">Tu sistema operativo personal. Inicia sesión para sincronizar tus datos en la nube de forma segura.</p>
             <div class="mt-8 space-y-4 max-w-sm mx-auto w-full">
-                <div class="hud-item">
-                    <button id="google-onboarding-btn" class="hud-button">Continuar con Google</button>
-                </div>
-                <div class="hud-item">
-                    <button id="local-continue-btn" class="hud-button">Usar sin conexión</button>
-                </div>
+                <div class="hud-item rounded-full"><button id="google-onboarding-btn" class="hud-button">Continuar con Google</button></div>
+                <div class="hud-item rounded-full"><button id="local-continue-btn" class="hud-button">Usar sin conexión</button></div>
             </div>
         </div>
-
         <!-- Paso 2: Introducir Nombre -->
         <div id="onboarding-step-2" class="onboarding-step">
             <h2 class="onboarding-title">¿Cómo te llamas?</h2>
             <p class="onboarding-text">Este nombre se usará para personalizar tu experiencia.</p>
             <div class="mt-8 max-w-sm mx-auto w-full">
-                <div class="hud-item">
-                    <input type="text" id="username-input" class="input-field text-2xl text-center" placeholder="Tu nombre...">
-                </div>
-                <div class="hud-item mt-4">
-                    <button id="confirm-name-btn" class="hud-button">Confirmar</button>
-                </div>
+                <div class="hud-item rounded-lg"><input type="text" id="username-input" class="input-field text-2xl text-center" placeholder="Tu nombre..."></div>
+                <div class="hud-item rounded-full mt-4"><button id="confirm-name-btn" class="hud-button">Confirmar</button></div>
             </div>
         </div>
-
         <!-- Paso 3: Carta de Compromiso -->
         <div id="onboarding-step-3" class="onboarding-step">
             <div class="flex flex-col items-center justify-between h-full w-full">
                 <div class="flex-grow flex flex-col items-center justify-center">
                     <h2 class="onboarding-title">Carta de Compromiso</h2>
-                    <p class="onboarding-text">
-                        Hoy, sellamos un pacto. Yo, <strong>MySoul</strong>, me comprometo a ser tu compañero constante. Tú, <strong id="commitment-username">Usuario</strong>, te comprometes a interactuar conmigo y a trabajar juntos por tus metas.
-                    </p>
+                    <p class="onboarding-text">Hoy, sellamos un pacto. Yo, <strong>MySoul</strong>, me comprometo a ser tu compañero constante. Tú, <strong id="commitment-username">Usuario</strong>, te comprometes a interactuar conmigo y a trabajar juntos por tus metas.</p>
                 </div>
                 <div id="fingerprint-button">
                     <div id="fingerprint-fill"></div>
-                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 12c0 2.42-.943 4.638-2.5 6.312M15.75 9.75A3.75 3.75 0 0112 13.5m-3.75 0A3.75 3.75 0 0112 6.75m-3.75 0a3.75 3.75 0 00-3.75 3.75M9 13.5A3.75 3.75 0 0112 9.75M15 13.5A3.75 3.75 0 0112 17.25m-3.75 0h3.75" />
-                    </svg>
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 12c0 2.42-.943 4.638-2.5 6.312M15.75 9.75A3.75 3.75 0 0112 13.5m-3.75 0A3.75 3.75 0 0112 6.75m-3.75 0a3.75 3.75 0 00-3.75 3.75M9 13.5A3.75 3.75 0 0112 9.75M15 13.5A3.75 3.75 0 0112 17.25m-3.75 0h3.75" /></svg>
                 </div>
             </div>
         </div>
     </div>
     <div id="transition-overlay"></div>
-
-    <!-- Modal Genérico para Alertas y Confirmaciones -->
     <div id="generic-modal" class="onboarding-step" style="z-index: 300; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px);">
         <div class="modal-content-wrapper">
             <h2 id="generic-modal-title" class="onboarding-title text-2xl">Notificación</h2>
-            <div id="generic-modal-text"></div>
-            <div id="generic-modal-buttons" class="mt-8 space-y-4 max-w-sm mx-auto w-full"></div>
+            <div id="generic-modal-text" class="text-left"></div>
+            <div id="generic-modal-buttons" class="mt-8 w-full"></div>
         </div>
     </div>
 
-
     <!-- ================================================================== -->
-    <!-- NUEVA ESTRUCTURA DEL LAUNCHER / SISTEMA OPERATIVO                 -->
+    <!-- ESTRUCTURA DEL LAUNCHER / SISTEMA OPERATIVO CON DOCK              -->
     <!-- ================================================================== -->
     <div id="main-os-container" style="display: none;">
         
-        <!-- Encabezado superior con información del usuario y hora -->
         <header id="main-header">
             <div id="user-info" class="flex items-center gap-3">
                 <img id="user-photo" src="https://placehold.co/40x40/000000/FFFFFF?text=G" alt="Foto de usuario" class="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:border-white">
                 <span id="header-username" class="font-semibold text-lg">Invitado</span>
             </div>
-            <div id="system-time" class="font-mono text-lg font-bold text-gray-400">
-                10:42 PM
-            </div>
+            <div id="system-time" class="font-mono text-lg font-bold text-gray-400">10:42 PM</div>
         </header>
 
-        <!-- Contenedor principal del carrusel de aplicaciones -->
-        <main id="app-carousel-wrapper">
-            <div id="app-carousel-track">
-
-                <!-- Tarjeta de App 1: MyTime -->
-                <article class="app-card" data-href="mytime.html">
-                    <div class="card-content">
-                        <div class="card-header">
-                            <h2 class="card-title">MyTime</h2>
-                            <p class="card-description">Gestión de tareas y enfoque para maximizar tu productividad.</p>
+        <!-- Contenedor principal que cambia según la categoría del dock -->
+        <main id="main-content-carousel">
+            <!-- Contenido para "Hub" (el carrusel original) -->
+            <div id="hub-content" class="dock-content" data-name="Hub">
+                <div id="app-carousel-track">
+                    <article class="app-card" data-href="mytime.html">
+                        <div class="card-content">
+                            <div class="card-header"><h2 class="card-title">MyTime</h2><p class="card-description">Gestión de tareas y enfoque para maximizar tu productividad.</p></div>
+                            <div class="card-footer"><span class="card-status">[ SYSTEM ONLINE ]</span></div>
                         </div>
-                        <div class="card-footer">
-                            <span class="card-status">[ SYSTEM ONLINE ]</span>
+                        <div class="card-bg-decoration"></div>
+                    </article>
+                    <article class="app-card" data-href="myroute.html">
+                        <div class="card-content">
+                            <div class="card-header"><h2 class="card-title">MyRoute</h2><p class="card-description">Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.</p></div>
+                            <div class="card-footer"><span class="card-status">[ SYSTEM ONLINE ]</span></div>
                         </div>
-                    </div>
-                    <div class="card-bg-decoration"></div>
-                </article>
-
-                <!-- Tarjeta de App 2: MyRoute -->
-                <article class="app-card" data-href="myroute.html">
-                    <div class="card-content">
-                        <div class="card-header">
-                            <h2 class="card-title">MyRoute</h2>
-                            <p class="card-description">Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.</p>
+                        <div class="card-bg-decoration"></div>
+                    </article>
+                    <article class="app-card" data-href="mymemory.html">
+                         <div class="card-content">
+                            <div class="card-header"><h2 class="card-title">MyMemory</h2><p class="card-description">Tu memoria extendida para organizar aficiones, ideas y listas.</p></div>
+                            <div class="card-footer"><span class="card-status">[ SYSTEM ONLINE ]</span></div>
                         </div>
-                        <div class="card-footer">
-                            <span class="card-status">[ SYSTEM ONLINE ]</span>
-                        </div>
-                    </div>
-                    <div class="card-bg-decoration"></div>
-                </article>
-
-                <!-- Tarjeta de App 3: MyMemory -->
-                <article class="app-card" data-href="mymemory.html">
-                     <div class="card-content">
-                        <div class="card-header">
-                            <h2 class="card-title">MyMemory</h2>
-                            <p class="card-description">Tu memoria extendida para organizar aficiones, ideas y listas.</p>
-                        </div>
-                        <div class="card-footer">
-                            <span class="card-status">[ SYSTEM ONLINE ]</span>
-                        </div>
-                    </div>
-                    <div class="card-bg-decoration"></div>
-                </article>
-
+                        <div class="card-bg-decoration"></div>
+                    </article>
+                </div>
             </div>
+            <!-- Otros contenidos (Tiempo, Notas, etc.) permanecen igual -->
+            <div id="weather-content" class="dock-content" data-name="Tiempo"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Ahora</h3><p class="small-card-content text-4xl">15°C <span class="text-2xl">☀️</span></p><p class="text-secondary">Despejado</p></div><div class="small-card"><h3 class="small-card-title">Pronóstico</h3><p class="small-card-content">Tarde: 18°C 🌤️<br>Noche: 12°C 🌙</p></div></div></div>
+            <div id="notes-content" class="dock-content" data-name="Notas"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Idea Rápida</h3><p class="small-card-content">Crear una app de sistema operativo personal...</p></div><div class="small-card"><h3 class="small-card-title">Lista de compras</h3><p class="small-card-content">- Leche<br>- Pan<br>- Café</p></div></div></div>
+            <div id="shortcuts-content" class="dock-content" data-name="Accesos"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Llamar a Casa</h3><p class="small-card-content text-4xl">📞</p></div><div class="small-card"><h3 class="small-card-title">Música Relajante</h3><p class="small-card-content text-4xl">🎵</p></div></div></div>
+            <div id="files-content" class="dock-content" data-name="Archivos"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Documentos</h3><p class="small-card-content text-4xl">📄</p></div></div></div>
+            <div id="health-content" class="dock-content" data-name="Salud"><div class="content-grid"><div class="small-card"><h3 class="small-card-title">Pasos Hoy</h3><p class="small-card-content text-4xl">👟 8,452</p></div></div></div>
         </main>
         
-        <!-- Navegación del carrusel -->
-        <nav id="carousel-navigation">
-            <div class="dots-container">
-                <button class="nav-dot" data-index="0"></button>
-                <button class="nav-dot" data-index="1"></button>
-                <button class="nav-dot" data-index="2"></button>
-            </div>
+        <!-- Barra de Navegación Inferior (Dock) -->
+        <nav id="bottom-dock">
+            <div id="dock-text-container"></div>
         </nav>
     </div>
     
-    <!-- Input oculto para la importación de archivos -->
+    <!-- Inputs ocultos para archivos -->
     <input type="file" id="import-file-input" class="hidden" accept=".json">
+    <input type="file" id="wallpaper-input" class="hidden" accept="image/*">
 
-    <!-- Script principal con toda la lógica integrada -->
     <script type="module">
-        // Importar funciones de Firebase desde la CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // --- CREDENCIALES Y CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyB1mdncFubF9Nj7s64rslYtwUQmfQUhm3U",
             authDomain: "mysoul-backupagent.firebaseapp.com",
@@ -463,63 +353,19 @@
             measurementId: "G-Q1BYXFV41W"
         };
 
-        // --- INICIALIZACIÓN DE FIREBASE ---
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // --- GESTOR DE DATOS UNIFICADO ---
         const dataManager = (() => {
             const UNIFIED_STORAGE_KEY = 'mySoul-data-v1';
-
-            function getDefaultUnifiedState() {
-                return {
-                    myTime: { userName: null, tasks: [], schedule: [], currentView: 'dashboard', selectedTaskId: null, selectedSubjectId: null, tempSubtasks: [], calendarDate: new Date().toISOString(), wallpaper: null, filters: { priority: 'all', tag: 'all' }, zenSettings: { pomodoro: 25, shortBreak: 5, longBreak: 15, color: '#00F0FF' }, gamification: { streak: 0, lastCompletionDate: null, achievements: [], pomodoroCount: 0 }, currentZenTaskId: null },
-                    myMemory: { memories: [], settings: { theme: 'dark' } },
-                    myRoute: { routes: [], settings: { mapStyle: 'dark' } },
-                    globalSettings: { onboardingComplete: false }
-                };
-            }
-
-            function getUnifiedData() {
-                const data = localStorage.getItem(UNIFIED_STORAGE_KEY);
-                if (data) {
-                    try {
-                        const parsedData = JSON.parse(data);
-                        const defaultState = getDefaultUnifiedState();
-                        return {
-                            ...defaultState,
-                            ...parsedData,
-                            myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) },
-                            myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) },
-                            myRoute: { ...defaultState.myRoute, ...(parsedData.myRoute || {}) },
-                            globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) },
-                        };
-                    } catch (error) {
-                        console.error("Error al parsear datos unificados, se retorna al estado por defecto:", error);
-                        return getDefaultUnifiedState();
-                    }
-                }
-                return getDefaultUnifiedState();
-            }
-
-            function saveUnifiedData(data) {
-                try {
-                    localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(data));
-                } catch (error) {
-                    console.error("Error al guardar los datos unificados:", error);
-                }
-            }
-            
-            return {
-                get: getUnifiedData,
-                save: saveUnifiedData
-            };
+            function getDefaultUnifiedState() { return { myTime: { userName: null, tasks: [], schedule: [], currentView: 'dashboard', selectedTaskId: null, selectedSubjectId: null, tempSubtasks: [], calendarDate: new Date().toISOString(), wallpaper: null, filters: { priority: 'all', tag: 'all' }, zenSettings: { pomodoro: 25, shortBreak: 5, longBreak: 15, color: '#00F0FF' }, gamification: { streak: 0, lastCompletionDate: null, achievements: [], pomodoroCount: 0 }, currentZenTaskId: null }, myMemory: { memories: [], settings: { theme: 'dark' } }, myRoute: { routes: [], settings: { mapStyle: 'dark' } }, globalSettings: { onboardingComplete: false } }; }
+            function getUnifiedData() { const data = localStorage.getItem(UNIFIED_STORAGE_KEY); if (data) { try { const parsedData = JSON.parse(data); const defaultState = getDefaultUnifiedState(); return { ...defaultState, ...parsedData, myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) }, myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) }, myRoute: { ...defaultState.myRoute, ...(parsedData.myRoute || {}) }, globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) }, }; } catch (error) { console.error("Error al parsear datos unificados, se retorna al estado por defecto:", error); return getDefaultUnifiedState(); } } return getDefaultUnifiedState(); }
+            function saveUnifiedData(data) { try { localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(data)); } catch (error) { console.error("Error al guardar los datos unificados:", error); } }
+            return { get: getUnifiedData, save: saveUnifiedData };
         })();
 
-
-        // --- LÓGICA PRINCIPAL DEL OS ---
         document.addEventListener('DOMContentLoaded', () => {
             const onboardingContainer = document.getElementById('onboarding-container');
             const mainOsContainer = document.getElementById('main-os-container');
@@ -528,206 +374,113 @@
             const modalText = document.getElementById('generic-modal-text');
             const modalButtons = document.getElementById('generic-modal-buttons');
 
-            function showModalAlert(message, title = 'Notificación') {
-                modalTitle.textContent = title;
-                modalText.innerHTML = `<p class="onboarding-text my-6">${message}</p>`;
-                modalButtons.innerHTML = `<div class="hud-item"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`;
-                genericModal.style.display = 'flex';
-                genericModal.classList.add('active');
-                document.getElementById('modal-ok-btn').addEventListener('click', () => {
-                    genericModal.classList.remove('active');
-                    setTimeout(() => genericModal.style.display = 'none', 300);
-                }, { once: true });
-            };
+            function showModalAlert(message, title = 'Notificación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="hud-item rounded-full"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); document.getElementById('modal-ok-btn').addEventListener('click', () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }, { once: true }); };
+            function showModalConfirm(message, onConfirm, title = 'Confirmación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white text-black"><button id="modal-confirm-btn" class="hud-button">Confirmar</button></div></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); const confirmBtn = document.getElementById('modal-confirm-btn'); const cancelBtn = document.getElementById('modal-cancel-btn'); const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }; confirmBtn.addEventListener('click', () => { close(); onConfirm?.(); }, { once: true }); cancelBtn.addEventListener('click', close, { once: true }); };
+            function signInWithGoogle() { signInWithPopup(auth, provider).catch((error) => { console.error("Error durante el inicio de sesión con Google:", error); showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación"); }); }
+            function handleSignOut() { signOut(auth).then(() => { window.location.reload(); }).catch((error) => { console.error("Error al cerrar sesión:", error); }); }
+            
+            async function saveDataToCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error"); return; } try { const dataToSave = JSON.parse(JSON.stringify(dataManager.get())); if (dataToSave.myRoute && dataToSave.myRoute.routes) { dataToSave.myRoute.routes.forEach(route => { if (Array.isArray(route.path)) { route.path = JSON.stringify(route.path); } }); } const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); await setDoc(userDocRef, dataToSave); showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo"); } catch (error) { console.error("Error saving data to Firestore:", error); showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error"); } }
+            async function loadDataFromCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error"); return; } try { const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); const docSnap = await getDoc(userDocRef); if (docSnap.exists()) { const cloudData = docSnap.data(); if (cloudData.myRoute && cloudData.myRoute.routes) { cloudData.myRoute.routes.forEach(route => { if (typeof route.path === 'string') { try { route.path = JSON.parse(route.path); } catch (e) { console.error("Error al parsear el path de la ruta:", e); route.path = []; } } }); } showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => { dataManager.save(cloudData); showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito"); setTimeout(() => window.location.reload(), 1500); }); } else { showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos"); } } catch (error) { console.error("Error loading data from Firestore:", error); showModalAlert("Hubo un error al cargar tus datos.", "Error"); } }
+            function exportData() { const dataStr = JSON.stringify(dataManager.get(), null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'mysoul_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showModalAlert('Datos locales exportados con éxito.'); }
+            function importData() { const importFileInput = document.getElementById('import-file-input'); importFileInput.click(); importFileInput.onchange = (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedData = JSON.parse(e.target.result); showModalConfirm('¿Estás seguro de que quieres sobreescribir tus datos locales?', () => { dataManager.save(importedData); showModalAlert('Datos importados con éxito. La página se recargará.'); setTimeout(() => window.location.reload(), 2000); }); } catch (error) { showModalAlert('Error al importar el archivo.'); } }; reader.readAsText(file); event.target.value = ''; }; }
+            
+            const wallpaperInput = document.getElementById('wallpaper-input');
+            const wallpaperDiv = document.getElementById('background-wallpaper');
 
-            function showModalConfirm(message, onConfirm, title = 'Confirmación') {
-                modalTitle.textContent = title;
-                modalText.innerHTML = `<p class="onboarding-text my-6">${message}</p>`;
-                modalButtons.innerHTML = `<div class="hud-item"><button id="modal-confirm-btn" class="hud-button">Confirmar</button></div><div class="hud-item mt-4"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div>`;
-                genericModal.style.display = 'flex';
-                genericModal.classList.add('active');
-                const confirmBtn = document.getElementById('modal-confirm-btn');
-                const cancelBtn = document.getElementById('modal-cancel-btn');
-                const close = () => {
-                    genericModal.classList.remove('active');
-                    setTimeout(() => genericModal.style.display = 'none', 300);
-                };
-                confirmBtn.addEventListener('click', () => { close(); onConfirm?.(); }, { once: true });
-                cancelBtn.addEventListener('click', close, { once: true });
-            };
+            function applyWallpaper(base64String) { if (base64String) { wallpaperDiv.style.backgroundImage = `url(${base64String})`; } }
+            function compressAndEncodeImage(file) { const maxDim = 1920; const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; } } else { if (height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); const base64String = canvas.toDataURL('image/jpeg', 0.7); const unifiedData = dataManager.get(); unifiedData.myTime.wallpaper = base64String; dataManager.save(unifiedData); applyWallpaper(base64String); showModalAlert('Fondo de pantalla actualizado.'); }; img.src = e.target.result; }; reader.readAsDataURL(file); }
+            wallpaperInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file && file.type.startsWith('image/')) { compressAndEncodeImage(file); } });
 
-            function signInWithGoogle() {
-                signInWithPopup(auth, provider)
-                    .catch((error) => {
-                        console.error("Error durante el inicio de sesión con Google:", error);
-                        showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación");
-                    });
-            }
-
-            function handleSignOut() {
-                signOut(auth).then(() => {
-                    window.location.reload();
-                }).catch((error) => {
-                    console.error("Error al cerrar sesión:", error);
-                });
-            }
-
-            // ✅ CORRECCIÓN: Función modificada para manejar arrays anidados.
-            async function saveDataToCloud() {
-                const user = auth.currentUser;
-                if (!user) {
-                    showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error");
-                    return;
-                }
-                try {
-                    // 1. Obtener una copia profunda de los datos para no modificar el estado local
-                    const dataToSave = JSON.parse(JSON.stringify(dataManager.get()));
-
-                    // 2. Convertir los 'path' de las rutas a strings JSON
-                    if (dataToSave.myRoute && dataToSave.myRoute.routes) {
-                        dataToSave.myRoute.routes.forEach(route => {
-                            if (Array.isArray(route.path)) {
-                                route.path = JSON.stringify(route.path);
-                            }
-                        });
-                    }
-
-                    // 3. Guardar los datos procesados en Firestore
-                    const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup');
-                    await setDoc(userDocRef, dataToSave);
-                    showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo");
-
-                } catch (error) {
-                    console.error("Error saving data to Firestore:", error);
-                    showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error");
-                }
-            }
-
-            // ✅ CORRECCIÓN: Función modificada para manejar datos cargados.
-            async function loadDataFromCloud() {
-                const user = auth.currentUser;
-                if (!user) {
-                    showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error");
-                    return;
-                }
-                try {
-                    const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup');
-                    const docSnap = await getDoc(userDocRef);
-                    if (docSnap.exists()) {
-                        const cloudData = docSnap.data();
-
-                        // 1. Convertir los 'path' de strings JSON de vuelta a arrays
-                        if (cloudData.myRoute && cloudData.myRoute.routes) {
-                            cloudData.myRoute.routes.forEach(route => {
-                                // Solo intentar parsear si es un string (para evitar errores)
-                                if (typeof route.path === 'string') {
-                                    try {
-                                        route.path = JSON.parse(route.path);
-                                    } catch (e) {
-                                        console.error("Error al parsear el path de la ruta:", e);
-                                        route.path = []; // Dejarlo como un array vacío si falla
-                                    }
-                                }
-                            });
-                        }
-
-                        // 2. Preguntar al usuario y guardar los datos procesados
-                        showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => {
-                            dataManager.save(cloudData);
-                            showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito");
-                            setTimeout(() => window.location.reload(), 1500);
-                        });
-                    } else {
-                        showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos");
-                    }
-                } catch (error) {
-                    console.error("Error loading data from Firestore:", error);
-                    showModalAlert("Hubo un error al cargar tus datos.", "Error");
-                }
-            }
-
-            function exportData() {
-                const dataStr = JSON.stringify(dataManager.get(), null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'mysoul_backup.json';
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showModalAlert('Datos locales exportados con éxito.');
-            }
-
-            function importData() {
-                const importFileInput = document.getElementById('import-file-input');
-                importFileInput.click();
-                importFileInput.onchange = (event) => {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const importedData = JSON.parse(e.target.result);
-                            showModalConfirm('¿Estás seguro de que quieres sobreescribir tus datos locales?', () => {
-                                dataManager.save(importedData);
-                                showModalAlert('Datos importados con éxito. La página se recargará.');
-                                setTimeout(() => window.location.reload(), 2000);
-                            });
-                        } catch (error) { showModalAlert('Error al importar el archivo.'); }
-                    };
-                    reader.readAsText(file);
-                    event.target.value = '';
-                };
-            }
-
+            // --- MODAL DE AJUSTES CORREGIDO ---
             function showSettingsModal() {
-                modalTitle.textContent = "Ajustes y Datos";
-                modalText.innerHTML = `<p class="onboarding-text my-6">Gestiona tus datos locales y en la nube.</p>`;
-                modalButtons.innerHTML = `
-                    <div class="hud-item w-full"><button id="settings-save-cloud" class="hud-button">Guardar en la Nube</button></div>
-                    <div class="hud-item w-full mt-4"><button id="settings-load-cloud" class="hud-button">Cargar desde la Nube</button></div>
-                    <div class="hud-item w-full mt-4"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
-                    <div class="hud-item w-full mt-4"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
-                    <div class="hud-item w-full mt-4"><button id="settings-logout" class="hud-button">Cerrar Sesión</button></div>
-                    <div class="hud-item w-full mt-4"><button id="settings-cancel" class="hud-button">Cancelar</button></div>
-                `;
+                const user = auth.currentUser;
+                modalTitle.textContent = "Ajustes";
+
+                const personalizationHTML = `
+                    <p class="onboarding-text mb-4">Cambia la apariencia de tu sistema.</p>
+                    <div class="hud-item rounded-full"><button id="change-wallpaper-btn" class="hud-button">Cambiar fondo</button></div>`;
+
+                let dataManagementHTML = '';
+                if (user) {
+                    // Vista para usuario con sesión iniciada
+                    dataManagementHTML = `
+                        <div class="space-y-4">
+                            <div class="hud-item rounded-full"><button id="settings-save-cloud" class="hud-button">Guardar en la Nube</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-load-cloud" class="hud-button">Cargar desde la Nube</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
+                            <div class="hud-item rounded-full mt-6 border-red-500/50 hover:border-red-500"><button id="settings-logout" class="hud-button text-red-500">Cerrar Sesión</button></div>
+                        </div>`;
+                } else {
+                    // Vista para usuario sin sesión
+                    dataManagementHTML = `
+                        <p class="onboarding-text mb-4 text-center">Inicia sesión para sincronizar tus datos en la nube.</p>
+                        <div class="hud-item rounded-full bg-white mb-6"><button id="settings-login-google" class="hud-button font-semibold text-black">Iniciar Sesión con Google</button></div>
+                        <hr class="border-t-2 border-dashed border-gray-700 my-6">
+                        <p class="onboarding-text mb-4 text-center">O gestiona tus datos locales.</p>
+                        <div class="space-y-4">
+                            <div class="hud-item rounded-full"><button id="settings-export" class="hud-button">Exportar Datos Locales</button></div>
+                            <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
+                        </div>`;
+                }
+
+                modalText.innerHTML = `
+                    <div id="settings-tabs">
+                        <button class="settings-tab active" data-tab="personalization">Personalización</button>
+                        <button class="settings-tab" data-tab="data">Gestión de Datos</button>
+                    </div>
+                    <div id="personalization-content" class="settings-tab-content active">${personalizationHTML}</div>
+                    <div id="data-content" class="settings-tab-content">${dataManagementHTML}</div>`;
+                
+                modalButtons.innerHTML = `<div class="hud-item rounded-full mt-6"><button id="settings-cancel" class="hud-button">Cerrar</button></div>`;
                 genericModal.style.display = 'flex';
                 genericModal.classList.add('active');
 
-                const close = () => {
-                    genericModal.classList.remove('active');
-                    setTimeout(() => genericModal.style.display = 'none', 300);
-                };
-                document.getElementById('settings-save-cloud').onclick = () => { close(); saveDataToCloud(); };
-                document.getElementById('settings-load-cloud').onclick = () => { close(); loadDataFromCloud(); };
+                const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); };
+                
+                const tabs = genericModal.querySelectorAll('.settings-tab');
+                const contents = genericModal.querySelectorAll('.settings-tab-content');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        contents.forEach(c => c.classList.remove('active'));
+                        tab.classList.add('active');
+                        document.getElementById(`${tab.dataset.tab}-content`).classList.add('active');
+                    });
+                });
+
+                // Asignación de eventos
+                document.getElementById('change-wallpaper-btn').onclick = () => wallpaperInput.click();
                 document.getElementById('settings-export').onclick = () => { close(); exportData(); };
                 document.getElementById('settings-import').onclick = () => { close(); importData(); };
-                document.getElementById('settings-logout').onclick = () => { close(); handleSignOut(); };
                 document.getElementById('settings-cancel').onclick = close;
+
+                if (user) {
+                    document.getElementById('settings-save-cloud').onclick = () => { close(); saveDataToCloud(); };
+                    document.getElementById('settings-load-cloud').onclick = () => { close(); loadDataFromCloud(); };
+                    document.getElementById('settings-logout').onclick = () => { close(); handleSignOut(); };
+                } else {
+                    document.getElementById('settings-login-google').onclick = () => { close(); signInWithGoogle(); };
+                }
             }
 
             function initializeApp() {
                 const unifiedData = dataManager.get();
-                
+                if (unifiedData.myTime?.wallpaper) { applyWallpaper(unifiedData.myTime.wallpaper); }
                 if (unifiedData.globalSettings.onboardingComplete) {
                     onboardingContainer.style.display = 'none';
                     mainOsContainer.style.display = 'block';
                     mainOsContainer.classList.add('active');
                     initializeCarousel();
+                    initializeNavigation();
                 } else {
                     onboardingContainer.style.display = 'block';
                     onboardingContainer.classList.add('active');
                     mainOsContainer.style.display = 'none';
                     showStep(1);
                 }
-
-                // Lógica del reloj
                 const timeEl = document.getElementById('system-time');
-                function updateSystemTime() {
-                    if (timeEl) {
-                        const now = new Date();
-                        timeEl.textContent = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                    }
-                }
+                function updateSystemTime() { if (timeEl) { const now = new Date(); timeEl.textContent = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); } }
                 updateSystemTime();
                 setInterval(updateSystemTime, 30000);
             }
@@ -736,83 +489,30 @@
                 const unifiedData = dataManager.get();
                 const userPhoto = document.getElementById('user-photo');
                 const headerUsername = document.getElementById('header-username');
-                
                 if (user) {
                     userPhoto.src = user.photoURL || `https://placehold.co/40x40/FFFFFF/000000?text=${user.displayName?.charAt(0) || 'U'}`;
                     headerUsername.textContent = user.displayName || 'Usuario';
-                    userPhoto.onclick = showSettingsModal;
-                    if (!unifiedData.globalSettings.onboardingComplete) {
-                        finishOnboarding();
-                    }
+                    if (!unifiedData.globalSettings.onboardingComplete) { finishOnboarding(); }
                 } else {
                     const localUsername = unifiedData.myTime?.userName;
                     headerUsername.textContent = localUsername || 'Invitado';
                     userPhoto.src = `https://placehold.co/40x40/FFFFFF/000000?text=${localUsername?.charAt(0) || 'G'}`;
-                    userPhoto.onclick = signInWithGoogle;
                 }
+                userPhoto.onclick = showSettingsModal;
             });
 
-            function showStep(stepNumber) {
-                document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
-                const step = document.getElementById(`onboarding-step-${stepNumber}`);
-                if(step) {
-                    step.classList.add('active');
-                }
-            }
-
-            function finishOnboarding() {
-                const transitionOverlay = document.getElementById('transition-overlay');
-                transitionOverlay.classList.add('expand');
-                
-                setTimeout(() => {
-                    onboardingContainer.style.display = 'none';
-                    mainOsContainer.style.display = 'block';
-                    mainOsContainer.classList.add('active');
-                    
-                    const unifiedData = dataManager.get();
-                    unifiedData.globalSettings.onboardingComplete = true;
-                    dataManager.save(unifiedData);
-                    
-                    initializeCarousel();
-                }, 400);
-
-                setTimeout(() => {
-                    transitionOverlay.style.display = 'none';
-                }, 1200);
-            }
-
+            function showStep(stepNumber) { document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active')); const step = document.getElementById(`onboarding-step-${stepNumber}`); if(step) { step.classList.add('active'); } }
+            function finishOnboarding() { const transitionOverlay = document.getElementById('transition-overlay'); transitionOverlay.classList.add('expand'); setTimeout(() => { onboardingContainer.style.display = 'none'; mainOsContainer.style.display = 'block'; mainOsContainer.classList.add('active'); const unifiedData = dataManager.get(); unifiedData.globalSettings.onboardingComplete = true; dataManager.save(unifiedData); initializeCarousel(); initializeNavigation(); }, 400); setTimeout(() => { transitionOverlay.style.display = 'none'; }, 1200); }
             document.getElementById('google-onboarding-btn')?.addEventListener('click', signInWithGoogle);
             document.getElementById('local-continue-btn')?.addEventListener('click', () => showStep(2));
-            document.getElementById('confirm-name-btn')?.addEventListener('click', () => {
-                const usernameInput = document.getElementById('username-input');
-                const username = usernameInput.value.trim();
-                if (username) {
-                    const unifiedData = dataManager.get();
-                    if (!unifiedData.myTime) unifiedData.myTime = {};
-                    unifiedData.myTime.userName = username;
-                    dataManager.save(unifiedData);
-                    document.getElementById('commitment-username').textContent = username;
-                    document.getElementById('header-username').textContent = username;
-                    showStep(3);
-                } else { showModalAlert('Por favor, introduce un nombre.'); }
-            });
+            document.getElementById('confirm-name-btn')?.addEventListener('click', () => { const usernameInput = document.getElementById('username-input'); const username = usernameInput.value.trim(); if (username) { const unifiedData = dataManager.get(); if (!unifiedData.myTime) unifiedData.myTime = {}; unifiedData.myTime.userName = username; dataManager.save(unifiedData); document.getElementById('commitment-username').textContent = username; document.getElementById('header-username').textContent = username; showStep(3); } else { showModalAlert('Por favor, introduce un nombre.'); } });
             const fingerprintButton = document.getElementById('fingerprint-button');
-            if(fingerprintButton) {
-                let holdTimeout;
-                const startHold = (e) => { e.preventDefault(); fingerprintButton.classList.add('holding'); holdTimeout = setTimeout(finishOnboarding, 2000); };
-                const endHold = () => { fingerprintButton.classList.remove('holding'); clearTimeout(holdTimeout); };
-                fingerprintButton.addEventListener('mousedown', startHold);
-                fingerprintButton.addEventListener('mouseup', endHold);
-                fingerprintButton.addEventListener('mouseleave', endHold);
-                fingerprintButton.addEventListener('touchstart', startHold, { passive: true });
-                fingerprintButton.addEventListener('touchend', endHold);
-            }
+            if(fingerprintButton) { let holdTimeout; const startHold = (e) => { e.preventDefault(); fingerprintButton.classList.add('holding'); holdTimeout = setTimeout(finishOnboarding, 2000); }; const endHold = () => { fingerprintButton.classList.remove('holding'); clearTimeout(holdTimeout); }; fingerprintButton.addEventListener('mousedown', startHold); fingerprintButton.addEventListener('mouseup', endHold); fingerprintButton.addEventListener('mouseleave', endHold); fingerprintButton.addEventListener('touchstart', startHold, { passive: true }); fingerprintButton.addEventListener('touchend', endHold); }
             
             function initializeCarousel() {
                 const track = document.getElementById('app-carousel-track');
                 if (!track) return;
                 const cards = Array.from(track.querySelectorAll('.app-card'));
-                const dots = Array.from(document.querySelectorAll('.nav-dot'));
                 if (cards.length === 0) return;
 
                 let currentIndex = 0;
@@ -824,27 +524,17 @@
                 function updateCardPositions(instant = false) {
                     cards.forEach((card, index) => {
                         card.style.transition = instant ? 'none' : 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease';
-                        
                         const offset = index - currentIndex;
                         const absOffset = Math.abs(offset);
-                        
                         let translateX = offset * 50;
-                        if (isDragging && index === currentIndex) {
-                            translateX += dragOffset / card.clientWidth * 50;
-                        }
-
+                        if (isDragging && index === currentIndex) { translateX += dragOffset / card.clientWidth * 50; }
                         const scale = 1 - absOffset * 0.1;
                         const zIndex = 10 - absOffset;
                         const opacity = 1 - absOffset * 0.3;
-                        
                         card.style.transform = `translateX(${translateX}%) scale(${scale})`;
                         card.style.opacity = `${Math.max(0, opacity)}`;
                         card.style.zIndex = `${zIndex}`;
                         card.style.pointerEvents = (offset === 0) ? 'auto' : 'none';
-                    });
-
-                    dots.forEach((dot, index) => {
-                        dot.classList.toggle('active', index === currentIndex);
                     });
                 }
                 
@@ -853,27 +543,14 @@
                 const dragMove = (e) => { if (isDragging) { dragOffset = getPositionX(e) - startPos; updateCardPositions(true); } };
                 const dragEnd = () => { if (!isDragging) return; isDragging = false; track.style.cursor = 'grab'; if (dragOffset < -50 && currentIndex < cards.length - 1) { currentIndex++; } if (dragOffset > 50 && currentIndex > 0) { currentIndex--; } dragOffset = 0; updateCardPositions(); };
                 
-                dots.forEach(dot => {
-                    dot.addEventListener('click', () => {
-                        currentIndex = parseInt(dot.dataset.index);
-                        updateCardPositions();
-                    });
-                });
-                
                 cards.forEach((card, index) => {
                     card.addEventListener('click', (e) => {
-                        if (Math.abs(dragOffset) > clickThreshold) {
-                            e.preventDefault();
-                            return;
-                        }
-                         if (index === currentIndex && card.dataset.href) {
-                            card.classList.add('exiting');
-                            setTimeout(() => { window.location.href = card.dataset.href; }, 400);
-                        }
+                        if (Math.abs(dragOffset) > clickThreshold) { e.preventDefault(); return; }
+                         if (index === currentIndex && card.dataset.href) { card.classList.add('exiting'); setTimeout(() => { window.location.href = card.dataset.href; }, 400); }
                     });
                 });
 
-                const wrapper = document.getElementById('app-carousel-wrapper');
+                const wrapper = document.getElementById('hub-content');
                 wrapper.addEventListener('mousedown', dragStart);
                 wrapper.addEventListener('touchstart', dragStart, { passive: true });
                 wrapper.addEventListener('mousemove', dragMove);
@@ -882,38 +559,165 @@
                 wrapper.addEventListener('mouseleave', dragEnd);
                 wrapper.addEventListener('touchend', dragEnd);
 
-                const navContainer = document.getElementById('carousel-navigation');
-                if (navContainer && !navContainer.querySelector('.swipe-hint')) {
-                    const swipeHint = document.createElement('p');
-                    swipeHint.className = 'swipe-hint';
-                    swipeHint.textContent = '‹ Desliza para explorar ›';
-                    navContainer.appendChild(swipeHint);
-                }
-
-                setTimeout(() => {
-                    updateCardPositions(true);
-                    track.style.visibility = 'visible';
-                }, 100);
-
+                setTimeout(() => { updateCardPositions(true); track.style.visibility = 'visible'; }, 100);
                 window.addEventListener('resize', () => updateCardPositions(true));
             }
 
-            // --- FUNCIÓN DE INICIALIZACIÓN PRINCIPAL DE LA APP ---
+            // --- LÓGICA DE NAVEGACIÓN POR GESTOS ---
+            function initializeNavigation() {
+                const contentCarousel = document.getElementById('main-content-carousel');
+                const dock = document.getElementById('bottom-dock');
+                const textContainer = document.getElementById('dock-text-container');
+                const sections = Array.from(contentCarousel.querySelectorAll('.dock-content'));
+                
+                let currentIndex = 0;
+                let isDragging = false;
+                let startX = 0;
+                let deltaX = 0;
+                
+                let currentTextEl, prevTextEl, nextTextEl;
+
+                function setupTextElements() {
+                    textContainer.innerHTML = '';
+                    
+                    currentTextEl = document.createElement('span');
+                    currentTextEl.className = 'dock-category-text';
+                    currentTextEl.textContent = sections[currentIndex]?.dataset.name || '';
+                    
+                    prevTextEl = document.createElement('span');
+                    prevTextEl.className = 'dock-category-text';
+                    prevTextEl.textContent = sections[currentIndex - 1]?.dataset.name || '';
+                    
+                    nextTextEl = document.createElement('span');
+                    nextTextEl.className = 'dock-category-text';
+                    nextTextEl.textContent = sections[currentIndex + 1]?.dataset.name || '';
+
+                    textContainer.append(prevTextEl, currentTextEl, nextTextEl);
+                    resetTextPositions(false);
+                }
+
+                function resetTextPositions(animated = true) {
+                    const duration = animated ? '0.4s' : '0s';
+                    [currentTextEl, prevTextEl, nextTextEl].forEach(el => {
+                        if(el) el.style.transitionDuration = duration;
+                    });
+                    
+                    if(currentTextEl) {
+                        currentTextEl.style.transform = 'translateX(0px)';
+                        currentTextEl.style.opacity = '1';
+                    }
+                    if(prevTextEl){
+                        prevTextEl.style.transform = 'translateX(-150%)';
+                        prevTextEl.style.opacity = '0';
+                    }
+                    if(nextTextEl){
+                        nextTextEl.style.transform = 'translateX(150%)';
+                        nextTextEl.style.opacity = '0';
+                    }
+                }
+
+                function updateOnDrag() {
+                    if (!isDragging) return;
+                    
+                    const dragFraction = Math.min(1, Math.abs(deltaX) / (dock.clientWidth * 1.5));
+                    
+                    currentTextEl.style.transform = `translateX(${deltaX}px)`;
+                    currentTextEl.style.opacity = `${1 - dragFraction}`;
+                    
+                    if (deltaX > 0) { // Arrastrando a la derecha -> entra el previo desde la izquierda
+                        prevTextEl.style.transform = `translateX(calc(-150% + ${deltaX}px))`;
+                        prevTextEl.style.opacity = `${dragFraction}`;
+                    } else { // Arrastrando a la izquierda -> entra el siguiente desde la derecha
+                        nextTextEl.style.transform = `translateX(calc(150% + ${deltaX}px))`;
+                        nextTextEl.style.opacity = `${dragFraction}`;
+                    }
+                }
+
+                function dragStart(e) {
+                    isDragging = true;
+                    startX = e.pageX || e.touches[0].pageX;
+                    [currentTextEl, prevTextEl, nextTextEl].forEach(el => {
+                        if(el) el.style.transitionDuration = '0s';
+                    });
+                }
+
+                function dragMove(e) {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    const currentX = e.pageX || e.touches[0].pageX;
+                    deltaX = currentX - startX;
+                    
+                    if ((currentIndex === 0 && deltaX > 0) || (currentIndex === sections.length - 1 && deltaX < 0)) {
+                        deltaX /= 2; // Resistencia en los bordes
+                    }
+                    
+                    requestAnimationFrame(updateOnDrag);
+                }
+
+                function dragEnd() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    
+                    const swipeThreshold = dock.clientWidth / 4;
+                    let newIndex = currentIndex;
+
+                    if (deltaX < -swipeThreshold && currentIndex < sections.length - 1) {
+                        newIndex++; // Swipe a la izquierda
+                    } else if (deltaX > swipeThreshold && currentIndex > 0) {
+                        newIndex--; // Swipe a la derecha
+                    }
+
+                    if (newIndex !== currentIndex) {
+                        contentCarousel.scrollTo({
+                            left: newIndex * window.innerWidth,
+                            behavior: 'smooth'
+                        });
+                    } else {
+                       resetTextPositions(true);
+                    }
+                    
+                    deltaX = 0;
+                }
+
+                let scrollTimeout;
+                contentCarousel.addEventListener('scroll', () => {
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        const panelWidth = window.innerWidth;
+                        const newIndex = Math.round(contentCarousel.scrollLeft / panelWidth);
+                        
+                        sections.forEach((section, index) => {
+                            section.classList.toggle('active', index === newIndex);
+                        });
+
+                        if (newIndex !== currentIndex || !currentTextEl) {
+                            currentIndex = newIndex;
+                            setupTextElements();
+                        }
+                    }, 50);
+                });
+
+                dock.addEventListener('mousedown', dragStart);
+                dock.addEventListener('touchstart', dragStart, { passive: true });
+                window.addEventListener('mousemove', dragMove);
+                window.addEventListener('touchmove', dragMove, { passive: true });
+                window.addEventListener('mouseup', dragEnd);
+                window.addEventListener('touchend', dragEnd);
+
+                sections[0].classList.add('active');
+                setupTextElements();
+            }
+
             initializeApp();
         });
     </script>
 
-    <!-- Script para registrar el Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registrado con éxito:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('Error al registrar el Service Worker:', error);
-                    });
+                    .then(registration => console.log('Service Worker registrado con éxito:', registration.scope))
+                    .catch(error => console.log('Error al registrar el Service Worker:', error));
             });
         }
     </script>
