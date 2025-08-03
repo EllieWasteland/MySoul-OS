@@ -375,7 +375,21 @@
             const modalButtons = document.getElementById('generic-modal-buttons');
 
             function showModalAlert(message, title = 'Notificación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="hud-item rounded-full"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); document.getElementById('modal-ok-btn').addEventListener('click', () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }, { once: true }); };
-            function showModalConfirm(message, onConfirm, title = 'Confirmación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white text-black"><button id="modal-confirm-btn" class="hud-button">Confirmar</button></div></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); const confirmBtn = document.getElementById('modal-confirm-btn'); const cancelBtn = document.getElementById('modal-cancel-btn'); const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }; confirmBtn.addEventListener('click', () => { close(); onConfirm?.(); }, { once: true }); cancelBtn.addEventListener('click', close, { once: true }); };
+            
+            // CORRECCIÓN: Aplicar estilo de texto negro al botón de confirmar
+            function showModalConfirm(message, onConfirm, title = 'Confirmación') { 
+                modalTitle.textContent = title; 
+                modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; 
+                modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white"><button id="modal-confirm-btn" class="hud-button text-black font-semibold">Confirmar</button></div></div>`; 
+                genericModal.style.display = 'flex'; 
+                genericModal.classList.add('active'); 
+                const confirmBtn = document.getElementById('modal-confirm-btn'); 
+                const cancelBtn = document.getElementById('modal-cancel-btn'); 
+                const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }; 
+                confirmBtn.addEventListener('click', () => { close(); onConfirm?.(); }, { once: true }); 
+                cancelBtn.addEventListener('click', close, { once: true }); 
+            };
+
             function signInWithGoogle() { signInWithPopup(auth, provider).catch((error) => { console.error("Error durante el inicio de sesión con Google:", error); showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación"); }); }
             function handleSignOut() { signOut(auth).then(() => { window.location.reload(); }).catch((error) => { console.error("Error al cerrar sesión:", error); }); }
             
