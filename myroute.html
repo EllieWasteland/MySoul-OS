@@ -99,12 +99,32 @@
         <!-- Sección de Ajustes -->
         <div class="border-t pt-4" style="border-color: var(--border-color);">
             <h3 class="text-lg font-bold mb-3">Ajustes</h3>
-            <div class="space-y-2">
-                <p class="text-sm" style="color: var(--text-secondary);">Tema de la aplicación</p>
-                <div id="theme-selector" class="flex gap-2">
-                    <button data-theme="dark" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Oscuro</button>
-                    <button data-theme="light" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Claro</button>
-                    <button data-theme="black" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Negro</button>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Tema de la aplicación</p>
+                    <div id="theme-selector" class="flex gap-2">
+                        <button data-theme="dark" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Oscuro</button>
+                        <button data-theme="light" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Claro</button>
+                        <button data-theme="black" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Negro</button>
+                    </div>
+                </div>
+                
+                <!-- Grupo de Gestión de Rutas -->
+                <div>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Gestión de Rutas</p>
+                    <div class="flex gap-2">
+                        <button id="export-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Exportar Rutas</button>
+                        <button id="import-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Importar Rutas</button>
+                    </div>
+                </div>
+
+                <!-- Grupo de Mapa Offline -->
+                <div>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Mapa Offline</p>
+                    <button id="download-map-btn" class="theme-btn w-full py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Descargar Mapa (50x50km)</button>
+                    <p id="offline-mode-indicator" class="hidden text-xs text-center mt-2" style="color: var(--secondary-color);">
+                        Modo offline activado. Para salir, reinicia la aplicación.
+                    </p>
                 </div>
             </div>
         </div>
@@ -122,6 +142,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Input oculto para importar archivos -->
+    <input type="file" id="import-file-input" class="hidden" accept=".json">
 
     <!-- Script principal como módulo -->
     <script type="module" src="myroute.js"></script>
