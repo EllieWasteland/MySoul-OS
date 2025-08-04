@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -417,17 +417,60 @@
 
         const dataManager = (() => {
             const UNIFIED_STORAGE_KEY = 'mySoul-data-v1';
+            const MYMOOD_STORAGE_KEY = 'myMoodData_v5'; // Using the latest key
             
             function getDefaultUnifiedState() { 
                 return { 
                     myTime: { userName: null, tasks: [], wallpaper: null }, 
                     myMemory: { memories: [] },
-                    myMood: { entries: [] }, // Added myMood
+                    myRoute: { routes: [] },
+                    myMood: { entries: [] }, // This is a placeholder, MyMood data is separate
                     globalSettings: { onboardingComplete: false, externalApps: [], shortcuts: [] } 
                 }; 
             }
-            function getUnifiedData() { const data = localStorage.getItem(UNIFIED_STORAGE_KEY); if (data) { try { const parsedData = JSON.parse(data); const defaultState = getDefaultUnifiedState(); return { ...defaultState, ...parsedData, myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) }, myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) }, myMood: { ...defaultState.myMood, ...(parsedData.myMood || {}) }, globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) }, }; } catch (error) { console.error("Error al parsear datos unificados:", error); return getDefaultUnifiedState(); } } return getDefaultUnifiedState(); }
-            function saveUnifiedData(data) { try { localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(data)); } catch (error) { console.error("Error al guardar los datos unificados:", error); } }
+            function getUnifiedData() { 
+                const data = localStorage.getItem(UNIFIED_STORAGE_KEY); 
+                const moodData = localStorage.getItem(MYMOOD_STORAGE_KEY);
+                let parsedData = {};
+                if (data) {
+                    try {
+                        parsedData = JSON.parse(data);
+                    } catch (error) {
+                        console.error("Error parsing main data:", error);
+                        parsedData = {};
+                    }
+                }
+                
+                const defaultState = getDefaultUnifiedState();
+                const unified = {
+                    ...defaultState,
+                    ...parsedData,
+                    myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) },
+                    myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) },
+                    myRoute: { ...defaultState.myRoute, ...(parsedData.myRoute || {}) },
+                    globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) },
+                };
+
+                // Inject MyMood data from its own storage
+                try {
+                    unified.myMood = moodData ? JSON.parse(moodData) : [];
+                } catch(e) {
+                    console.error("Error parsing MyMood data:", e);
+                    unified.myMood = [];
+                }
+
+                return unified;
+            }
+            function saveUnifiedData(data) { 
+                try { 
+                    // Separate MyMood data before saving
+                    const { myMood, ...mainData } = data;
+                    localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(mainData));
+                    localStorage.setItem(MYMOOD_STORAGE_KEY, JSON.stringify(myMood || []));
+                } catch (error) { 
+                    console.error("Error saving unified data:", error); 
+                } 
+            }
             return { get: getUnifiedData, save: saveUnifiedData };
         })();
 
@@ -447,8 +490,78 @@
             function signInWithGoogle() { signInWithPopup(auth, provider).catch((error) => { console.error("Error durante el inicio de sesión con Google:", error); showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación"); }); }
             function handleSignOut() { signOut(auth).then(() => { window.location.reload(); }).catch((error) => { console.error("Error al cerrar sesión:", error); }); }
             
-            async function saveDataToCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error"); return; } try { const dataToSave = dataManager.get(); const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); await setDoc(userDocRef, dataToSave); showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo"); } catch (error) { console.error("Error saving data to Firestore:", error); showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error"); } }
-            async function loadDataFromCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error"); return; } try { const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); const docSnap = await getDoc(userDocRef); if (docSnap.exists()) { const cloudData = docSnap.data(); showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => { dataManager.save(cloudData); showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito"); setTimeout(() => window.location.reload(), 1500); }); } else { showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos"); } } catch (error) { console.error("Error loading data from Firestore:", error); showModalAlert("Hubo un error al cargar tus datos.", "Error"); } }
+            async function saveDataToCloud() {
+                const user = auth.currentUser;
+                if (!user) {
+                    showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error");
+                    return;
+                }
+                try {
+                    // Get all data from local storage
+                    const dataToSave = dataManager.get();
+
+                    // **FIX: Sanitize data for Firestore**
+                    // Create a deep copy to avoid modifying the live app state
+                    const sanitizedData = JSON.parse(JSON.stringify(dataToSave));
+
+                    // Serialize nested arrays in myRoute
+                    if (sanitizedData.myRoute && sanitizedData.myRoute.routes) {
+                        sanitizedData.myRoute.routes.forEach(route => {
+                            if (Array.isArray(route.path)) {
+                                route.path = JSON.stringify(route.path);
+                            }
+                        });
+                    }
+                    
+                    const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup');
+                    await setDoc(userDocRef, sanitizedData); // Save the sanitized data
+                    showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo");
+                } catch (error) {
+                    console.error("Error saving data to Firestore:", error);
+                    showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error");
+                }
+            }
+
+            async function loadDataFromCloud() {
+                const user = auth.currentUser;
+                if (!user) {
+                    showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error");
+                    return;
+                }
+                try {
+                    const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup');
+                    const docSnap = await getDoc(userDocRef);
+                    if (docSnap.exists()) {
+                        const cloudData = docSnap.data();
+
+                        // **FIX: Deserialize data from Firestore**
+                        if (cloudData.myRoute && cloudData.myRoute.routes) {
+                            cloudData.myRoute.routes.forEach(route => {
+                                // Check if path is a string (meaning it was serialized)
+                                if (typeof route.path === 'string') {
+                                    try {
+                                        route.path = JSON.parse(route.path);
+                                    } catch(e) {
+                                        console.error("Failed to parse route path:", e);
+                                        route.path = []; // Reset to empty array on failure
+                                    }
+                                }
+                            });
+                        }
+
+                        showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => {
+                            dataManager.save(cloudData);
+                            showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito");
+                            setTimeout(() => window.location.reload(), 1500);
+                        });
+                    } else {
+                        showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos");
+                    }
+                } catch (error) {
+                    console.error("Error loading data from Firestore:", error);
+                    showModalAlert(`Hubo un error al cargar tus datos: ${error.message}`, "Error");
+                }
+            }
             
             // --- Gestión de Datos Locales (Importar/Exportar) ---
             function exportData() { const dataStr = JSON.stringify(dataManager.get(), null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'mysoul_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showModalAlert('Datos locales exportados con éxito.'); }
@@ -781,7 +894,6 @@
                         const opacity = 1 - absOffset * 0.3;
                         card.style.transform = `translateX(${translateX}%) scale(${scale})`;
                         card.style.opacity = `${Math.max(0, opacity)}`;
-                        card.style.zIndex = `${zIndex}`;
                         card.style.pointerEvents = (offset === 0) ? 'auto' : 'none';
                     });
                 }
