@@ -1,6 +1,6 @@
 // Define un nombre y una versión para tu caché.
 // Cambiar la versión forzará al navegador a actualizar el service worker y la caché.
-const CACHE_NAME = 'mysoul-os-cache-v1';
+const CACHE_NAME = 'mysoul-os-cache-v2'; // Updated cache version
 
 // Lista completa de archivos y recursos para que la app funcione sin conexión.
 const urlsToCache = [
@@ -24,6 +24,11 @@ const urlsToCache = [
   './myroute.html',
   './myroute.css',
   './myroute.js',
+
+  // --- Módulo MyMood ---
+  './mymood.html',
+  './mymood.css',
+  './mymood.js',
   
   // --- Iconos de la app ---
   './icons/icon-192x192.png',

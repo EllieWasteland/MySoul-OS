@@ -30,6 +30,9 @@ export function getDefaultUnifiedState() {
                 mapStyle: 'dark'
             }
         },
+        myMood: { // Nueva sección para MyMood
+            entries: []
+        },
         globalSettings: { onboardingComplete: false }
     };
 }
@@ -47,6 +50,7 @@ export function getUnifiedData() {
                 myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) },
                 myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) },
                 myRoute: { ...defaultState.myRoute, ...(parsedData.myRoute || {}) },
+                myMood: { ...defaultState.myMood, ...(parsedData.myMood || {}) }, // Fusionar MyMood
                 globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) },
             };
         } catch (error) {
