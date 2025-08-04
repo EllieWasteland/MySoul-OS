@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const buttons = {
         backToDashboard: getEl('back-to-dashboard-btn'), editTask: getEl('edit-task-btn'),
+        deleteTask: getEl('delete-task-btn'), // Botón nuevo
         resetApp: getEl('reset-app-btn'),
         saveWallpaperUrl: getEl('save-wallpaper-url-btn'), resetWallpaper: getEl('reset-wallpaper-btn'),
         startZenSession: getEl('start-zen-session-btn'), exitZen: getEl('exit-zen-btn'),
@@ -245,10 +246,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function showZenLogConfirmation() { const task = state.tasks.find(t => t.id === state.currentZenTaskId); if (!task) return; zen.confirmLogContent.innerHTML = `<h2 class="font-heading text-2xl mb-4">Sesión Completada</h2><p class="mb-6 text-secondary">¿Registrar ${state.zenSettings.pomodoro} min en la tarea "${task.title}"?</p><div class="flex gap-4"><button id="confirm-log-yes" class="flex-1 btn btn-primary">Sí</button><button id="confirm-log-no" class="flex-1 btn">No</button></div>`; zen.confirmLogModal.classList.add('active'); getEl('confirm-log-yes').onclick = async () => { if (!task.zenSessions) task.zenSessions = []; task.zenSessions.push({ date: new Date().toISOString(), duration: state.zenSettings.pomodoro }); await dataService.saveData(state); zen.confirmLogModal.classList.remove('active'); state.currentZenTaskId = null; }; getEl('confirm-log-no').onclick = () => { zen.confirmLogModal.classList.remove('active'); state.currentZenTaskId = null; }; }
     function startMinimalistAnimation() { const ctx = zen.canvas.getContext('2d'); let lines = []; zen.canvas.width = window.innerWidth; zen.canvas.height = window.innerHeight; zenState.isActive = true; class Line { constructor() { this.x = Math.random() * zen.canvas.width; this.y = Math.random() * zen.canvas.height; this.len = Math.random() * 20 + 10; this.speed = Math.random() * 0.5 + 0.1; this.angle = Math.random() * Math.PI * 2; this.life = Math.random() * 200 + 100; this.originalLife = this.life; } update() { this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed; this.life--; if (this.x < 0 || this.x > zen.canvas.width || this.y < 0 || this.y > zen.canvas.height) { this.life = 0; } } draw() { ctx.strokeStyle = state.settings.color; ctx.lineWidth = 2; ctx.globalAlpha = this.life / this.originalLife; ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x + Math.cos(this.angle) * this.len, this.y + Math.sin(this.angle) * this.len); ctx.stroke(); ctx.globalAlpha = 1; } } function animate() { if(!zenState.isActive) { cancelAnimationFrame(zenState.particleAnimationId); return; }; ctx.clearRect(0, 0, zen.canvas.width, zen.canvas.height); if (lines.length < 100) { lines.push(new Line()); } for (let i = lines.length - 1; i >= 0; i--) { lines[i].update(); lines[i].draw(); if (lines[i].life <= 0) { lines.splice(i, 1); } } zenState.particleAnimationId = requestAnimationFrame(animate); } animate(); }
 
+    // --- LÓGICA PARA ELIMINAR TAREA ---
+    async function deleteTaskHandler() {
+        if (!state.selectedTaskId) return;
+
+        const taskToDelete = state.tasks.find(t => t.id === state.selectedTaskId);
+        if (!taskToDelete) return;
+
+        if (confirm(`¿Estás seguro de que quieres eliminar la tarea "${taskToDelete.title}"? Esta acción no se puede deshacer.`)) {
+            state.tasks = state.tasks.filter(t => t.id !== state.selectedTaskId);
+            state.selectedTaskId = null;
+            await dataService.saveData(state);
+
+            hideHiddenView('details');
+            // Actualizar la vista actual para reflejar la eliminación
+            const activeView = document.querySelector('.view.active').id;
+            switchView(activeView);
+        }
+    }
+
+
     // --- EVENT HANDLERS ---
     buttons.fabAddTask.addEventListener('click', () => openMultiStepForm());
     buttons.backToDashboard.addEventListener('click', () => hideHiddenView('details'));
     buttons.editTask.addEventListener('click', () => { if (state.selectedTaskId) { const task = state.tasks.find(t => t.id === state.selectedTaskId); hideHiddenView('details'); openMultiStepForm(task); } });
+    buttons.deleteTask.addEventListener('click', deleteTaskHandler); // Event listener para el nuevo botón
     buttons.startZenSession.addEventListener('click', () => { state.currentZenTaskId = state.selectedTaskId; openZenSetup(); });
     buttons.dashboardZen.addEventListener('click', () => { state.currentZenTaskId = null; openZenSetup(); });
     buttons.exitZen.addEventListener('click', stopZenMode);
