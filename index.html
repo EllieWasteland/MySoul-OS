@@ -24,9 +24,10 @@
             --text-secondary: #a0a0a0;
             --border-color: rgba(255, 255, 255, 0.2);
             --highlight-color: rgba(255, 255, 255, 0.05);
-            --card-bg: rgba(24, 24, 24, 0.65); /* Opacidad aumentada */
+            --card-bg: rgba(24, 24, 24, 0.65);
             --card-border: rgba(255, 255, 255, 0.1);
             --card-glow: rgba(255, 255, 255, 0.05);
+            --danger-color: #ff4757;
         }
 
         body {
@@ -46,7 +47,7 @@
             background-size: cover;
             background-position: center;
             filter: blur(20px) brightness(0.8);
-            transform: scale(1.1); /* Evita bordes vacíos por el blur */
+            transform: scale(1.1);
         }
 
         #dots-overlay {
@@ -105,10 +106,10 @@
             width: 100vw;
             height: 100vh;
             display: flex;
-            align-items: start; /* CORREGIDO: para que el contenido no se centre verticalmente */
+            align-items: start;
             justify-content: center;
             perspective: 1200px;
-            padding-top: 10rem; /* Aumentado para dar espacio */
+            padding-top: 10rem;
             padding-bottom: 8rem;
             padding-left: 1rem;
             padding-right: 1rem;
@@ -122,7 +123,6 @@
             opacity: 1;
             visibility: visible;
         }
-
 
         /* --- Estilos del Carrusel de Apps (Hub) --- */
         #app-carousel-track {
@@ -155,31 +155,48 @@
 
         /* --- Estilos para Contenido de Nuevas Categorías --- */
         .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem; width: 100%; max-width: 1200px; height: 100%; overflow-y: auto; align-content: start; }
-        .small-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; backdrop-filter: blur(10px); padding: 1.5rem; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; }
+        .small-card { position: relative; background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; backdrop-filter: blur(10px); padding: 1.5rem; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; }
         .small-card:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.3); }
         .small-card-title { font-size: 1.5rem; font-weight: 600; }
         .small-card-content { font-size: 1rem; color: var(--text-secondary); }
         .action-button { background-color: rgba(255,255,255,0.1); padding: 0.75rem 1.5rem; border-radius: 99px; text-align: center; transition: background-color 0.2s; cursor: pointer; display: block; margin-top: 1rem; }
         .action-button:hover { background-color: rgba(255,255,255,0.2); }
-        .todo-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; }
-        .todo-checkbox { width: 1.25rem; height: 1.25rem; background-color: transparent; border: 2px solid var(--border-color); border-radius: 50%; }
+        
+        /* --- Menú de opciones de 3 puntos --- */
+        .card-options-btn { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; border-radius: 50%; transition: all 0.2s ease; z-index: 5; }
+        .card-options-btn:hover { background-color: var(--highlight-color); color: var(--text-primary); }
+        .card-options-menu { display: none; position: absolute; top: 3rem; right: 1rem; background-color: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; z-index: 10; width: 150px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+        .card-options-menu.visible { display: block; animation: fadeInMenu 0.1s ease-out forwards; }
+        @keyframes fadeInMenu { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        .card-options-menu button { display: block; width: 100%; text-align: left; padding: 0.5rem 0.75rem; background: none; border: none; color: var(--text-primary); cursor: pointer; border-radius: 0.25rem; transition: background-color 0.2s; font-size: 0.875rem; }
+        .card-options-menu button:hover { background-color: var(--highlight-color); }
+        .card-options-menu button.delete { color: var(--danger-color); }
+
 
         /* --- Barra de Navegación Inferior (Dock) --- */
-        #bottom-dock {
+        #bottom-dock-wrapper {
             position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 1rem;
+            left: 0;
+            right: 0;
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            pointer-events: none; /* Permite que los clics pasen a través del contenedor */
+        }
+        #bottom-dock {
             width: auto;
             min-width: 180px;
             max-width: min(90vw, 300px);
             background-color: #FFFFFF;
             color: #000000;
             border-radius: 9999px;
-            z-index: 150;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.1);
             cursor: grab;
             user-select: none;
+            pointer-events: auto; /* Rehabilita los eventos para el dock */
         }
         #bottom-dock:active { cursor: grabbing; }
 
@@ -201,6 +218,37 @@
             white-space: nowrap;
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
         }
+
+        /* --- Guía de navegación con flechas --- */
+        .dock-guide-arrow {
+            font-size: 2.5rem;
+            font-weight: 100;
+            color: var(--text-secondary);
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+        .dock-guide-arrow.left {
+            animation: pulse-outward-left 2.5s infinite cubic-bezier(0.45, 0, 0.55, 1);
+        }
+        .dock-guide-arrow.right {
+            animation: pulse-outward-right 2.5s infinite cubic-bezier(0.45, 0, 0.55, 1);
+        }
+        @keyframes pulse-outward-left {
+            0%, 100% { opacity: 0.3; transform: translateX(0); }
+            50% { opacity: 0.9; transform: translateX(-10px); }
+        }
+        @keyframes pulse-outward-right {
+            0%, 100% { opacity: 0.3; transform: translateX(0); }
+            50% { opacity: 0.9; transform: translateX(10px); }
+        }
+        .dock-guide-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background-color: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 99px;
+        }
+
 
         /* --- Estilos de Onboarding y Modal --- */
         .onboarding-step { display: none; opacity: 0; position: fixed; inset: 0; z-index: 200; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; background-color: var(--bg-color); transition: opacity 0.5s ease-in-out; }
@@ -233,7 +281,6 @@
             .card-title { font-size: 2.2rem; }
             .card-description { font-size: 0.9rem; }
             .onboarding-title { font-size: 2rem; }
-            #bottom-dock { bottom: 1rem; }
         }
     </style>
 </head>
@@ -301,7 +348,6 @@
         </header>
 
         <!-- Contenedor principal que cambia según la categoría del dock -->
-        <!-- ** ORDEN DE SECCIONES ACTUALIZADO ** -->
         <main id="main-content-carousel">
             <!-- 1. Hub -->
             <div id="hub-content" class="dock-content" data-name="Hub">
@@ -330,27 +376,19 @@
                     <!-- Las notas se generarán dinámicamente aquí -->
                 </div>
             </div>
-
-            <!-- 5. Tiempo -->
-            <div id="weather-content" class="dock-content" data-name="Tiempo">
-                <div class="content-grid">
-                    <div class="small-card"><h3 class="small-card-title">Ahora</h3><p class="small-card-content text-4xl">15°C <span class="text-2xl">☀️</span></p><p class="text-secondary">Despejado</p></div>
-                    <div class="small-card"><h3 class="small-card-title">Pronóstico</h3><p class="small-card-content">Tarde: 18°C 🌤️<br>Noche: 12°C 🌙</p></div>
-                </div>
-            </div>
-
-            <!-- 6. Salud -->
-            <div id="health-content" class="dock-content" data-name="Salud">
-                <div class="content-grid">
-                    <div class="small-card"><h3 class="small-card-title">Pasos Hoy</h3><p class="small-card-content text-4xl">👟 8,452</p></div>
-                </div>
-            </div>
         </main>
         
         <!-- Barra de Navegación Inferior (Dock) -->
-        <nav id="bottom-dock">
-            <div id="dock-text-container"></div>
-        </nav>
+        <div id="bottom-dock-wrapper">
+            <div class="flex items-center justify-center gap-4 w-full">
+                 <div class="dock-guide-arrow left">‹</div>
+                 <nav id="bottom-dock">
+                     <div id="dock-text-container"></div>
+                 </nav>
+                 <div class="dock-guide-arrow right">›</div>
+            </div>
+            <p class="dock-guide-text">Deslizar para ir a la siguiente sección</p>
+        </div>
     </div>
     
     <!-- Inputs ocultos para archivos -->
@@ -400,18 +438,22 @@
             const modalText = document.getElementById('generic-modal-text');
             const modalButtons = document.getElementById('generic-modal-buttons');
 
+            // --- Funciones de Modales (Alertas y Confirmaciones) ---
             function showModalAlert(message, title = 'Notificación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="hud-item rounded-full"><button id="modal-ok-btn" class="hud-button">Aceptar</button></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); document.getElementById('modal-ok-btn').addEventListener('click', () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }, { once: true }); };
             function showModalConfirm(message, onConfirm, title = 'Confirmación') { modalTitle.textContent = title; modalText.innerHTML = `<p class="onboarding-text my-4">${message}</p>`; modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white text-black"><button id="modal-confirm-btn" class="hud-button">Confirmar</button></div></div>`; genericModal.style.display = 'flex'; genericModal.classList.add('active'); const confirmBtn = document.getElementById('modal-confirm-btn'); const cancelBtn = document.getElementById('modal-cancel-btn'); const close = () => { genericModal.classList.remove('active'); setTimeout(() => genericModal.style.display = 'none', 300); }; confirmBtn.addEventListener('click', () => { close(); onConfirm?.(); }, { once: true }); cancelBtn.addEventListener('click', close, { once: true }); };
 
+            // --- Lógica de Autenticación y Datos en la Nube ---
             function signInWithGoogle() { signInWithPopup(auth, provider).catch((error) => { console.error("Error durante el inicio de sesión con Google:", error); showModalAlert("Hubo un problema al intentar iniciar sesión con Google.", "Error de Autenticación"); }); }
             function handleSignOut() { signOut(auth).then(() => { window.location.reload(); }).catch((error) => { console.error("Error al cerrar sesión:", error); }); }
             
             async function saveDataToCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para guardar datos en la nube.", "Error"); return; } try { const dataToSave = dataManager.get(); const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); await setDoc(userDocRef, dataToSave); showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo"); } catch (error) { console.error("Error saving data to Firestore:", error); showModalAlert(`Hubo un error al guardar tus datos: ${error.message}`, "Error"); } }
             async function loadDataFromCloud() { const user = auth.currentUser; if (!user) { showModalAlert("Debes iniciar sesión para cargar datos desde la nube.", "Error"); return; } try { const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup'); const docSnap = await getDoc(userDocRef); if (docSnap.exists()) { const cloudData = docSnap.data(); showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => { dataManager.save(cloudData); showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito"); setTimeout(() => window.location.reload(), 1500); }); } else { showModalAlert("No se encontraron datos en la nube para esta cuenta.", "Sin Datos"); } } catch (error) { console.error("Error loading data from Firestore:", error); showModalAlert("Hubo un error al cargar tus datos.", "Error"); } }
             
+            // --- Gestión de Datos Locales (Importar/Exportar) ---
             function exportData() { const dataStr = JSON.stringify(dataManager.get(), null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'mysoul_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showModalAlert('Datos locales exportados con éxito.'); }
             function importData() { const importFileInput = document.getElementById('import-file-input'); importFileInput.click(); importFileInput.onchange = (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedData = JSON.parse(e.target.result); showModalConfirm('¿Estás seguro de que quieres sobreescribir tus datos locales?', () => { dataManager.save(importedData); showModalAlert('Datos importados con éxito. La página se recargará.'); setTimeout(() => window.location.reload(), 2000); }); } catch (error) { showModalAlert('Error al importar el archivo.'); } }; reader.readAsText(file); event.target.value = ''; }; }
             
+            // --- Gestión del Fondo de Pantalla ---
             const wallpaperInput = document.getElementById('wallpaper-input');
             const wallpaperDiv = document.getElementById('background-wallpaper');
 
@@ -419,6 +461,7 @@
             function compressAndEncodeImage(file) { const maxDim = 1920; const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; } } else { if (height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); const base64String = canvas.toDataURL('image/jpeg', 0.7); const unifiedData = dataManager.get(); unifiedData.myTime.wallpaper = base64String; dataManager.save(unifiedData); applyWallpaper(base64String); showModalAlert('Fondo de pantalla actualizado.'); }; img.src = e.target.result; }; reader.readAsDataURL(file); }
             wallpaperInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file && file.type.startsWith('image/')) { compressAndEncodeImage(file); } });
 
+            // --- Modal de Ajustes ---
             function showSettingsModal() {
                 const user = auth.currentUser;
                 modalTitle.textContent = "Ajustes";
@@ -490,13 +533,18 @@
                 }
             }
 
-            function showAddAppModal() {
-                modalTitle.textContent = "Añadir Nueva App";
+            // --- Modales para Añadir/Editar Apps y Accesos ---
+            function showAppModal(appIndex = null) {
+                const isEditing = appIndex !== null;
+                const unifiedData = dataManager.get();
+                const app = isEditing ? unifiedData.globalSettings.externalApps[appIndex] : null;
+
+                modalTitle.textContent = isEditing ? "Editar App" : "Añadir Nueva App";
                 modalText.innerHTML = `
-                    <p class="onboarding-text mb-4">Introduce los detalles de la nueva tarjeta.</p>
-                    <input type="text" id="new-app-title" class="input-field" placeholder="Título de la tarjeta">
-                    <input type="text" id="new-app-desc" class="input-field" placeholder="Descripción corta">
-                    <input type="url" id="new-app-link" class="input-field" placeholder="https://ejemplo.com">
+                    <p class="onboarding-text mb-4">Introduce los detalles de la tarjeta.</p>
+                    <input type="text" id="app-title-input" class="input-field" placeholder="Título de la tarjeta" value="${app ? app.title : ''}">
+                    <input type="text" id="app-desc-input" class="input-field" placeholder="Descripción corta" value="${app ? app.description : ''}">
+                    <input type="url" id="app-link-input" class="input-field" placeholder="https://ejemplo.com" value="${app ? app.href : ''}">
                 `;
                 modalButtons.innerHTML = `<div class="flex gap-4"><div class="hud-item rounded-full flex-1"><button id="modal-cancel-btn" class="hud-button">Cancelar</button></div><div class="hud-item rounded-full flex-1 bg-white text-black"><button id="modal-save-app-btn" class="hud-button">Guardar</button></div></div>`;
                 genericModal.style.display = 'flex';
@@ -506,19 +554,24 @@
 
                 document.getElementById('modal-cancel-btn').addEventListener('click', close, { once: true });
                 document.getElementById('modal-save-app-btn').addEventListener('click', () => {
-                    const title = document.getElementById('new-app-title').value.trim();
-                    const description = document.getElementById('new-app-desc').value.trim();
-                    const link = document.getElementById('new-app-link').value.trim();
+                    const title = document.getElementById('app-title-input').value.trim();
+                    const description = document.getElementById('app-desc-input').value.trim();
+                    const link = document.getElementById('app-link-input').value.trim();
 
                     if (title && description && link) {
                         try {
                             new URL(link); // Validar URL
-                            const unifiedData = dataManager.get();
-                            unifiedData.globalSettings.externalApps.push({ title, description, href: link });
-                            dataManager.save(unifiedData);
-                            initializeCarousel(); // Recargar el carrusel
+                            const currentData = dataManager.get();
+                            const newApp = { title, description, href: link };
+                            if (isEditing) {
+                                currentData.globalSettings.externalApps[appIndex] = newApp;
+                            } else {
+                                currentData.globalSettings.externalApps.push(newApp);
+                            }
+                            dataManager.save(currentData);
+                            initializeCarousel();
                             close();
-                            showModalAlert("¡Nueva app añadida con éxito!");
+                            showModalAlert(`¡App ${isEditing ? 'actualizada' : 'añadida'} con éxito!`);
                         } catch (_) {
                             showModalAlert("Por favor, introduce un enlace válido (URL).");
                         }
@@ -528,8 +581,12 @@
                 }, { once: true });
             }
             
-            function showAddShortcutModal() {
-                modalTitle.textContent = "Nuevo Acceso Directo";
+            function showShortcutModal(shortcutIndex = null) {
+                const isEditing = shortcutIndex !== null;
+                const unifiedData = dataManager.get();
+                const shortcut = isEditing ? unifiedData.globalSettings.shortcuts[shortcutIndex] : null;
+
+                modalTitle.textContent = isEditing ? "Editar Acceso Directo" : "Nuevo Acceso Directo";
                 modalText.innerHTML = `
                     <p class="onboarding-text mb-4">Selecciona el tipo de acceso directo.</p>
                     <div id="shortcut-type-selector" class="flex gap-4 mb-6">
@@ -546,28 +603,33 @@
                 const formContainer = document.getElementById('shortcut-form-container');
                 const typeCallBtn = document.getElementById('type-call-btn');
                 const typeAppBtn = document.getElementById('type-app-btn');
-                let selectedType = '';
+                let selectedType = shortcut ? shortcut.type : 'call';
 
-                const callForm = `
-                    <input type="text" id="shortcut-name" class="input-field" placeholder="Nombre (Ej: Casa)">
-                    <input type="tel" id="shortcut-phone" class="input-field" placeholder="Número de teléfono">
-                `;
-                const appForm = `
-                    <input type="text" id="shortcut-name" class="input-field" placeholder="Nombre de la App (Ej: WhatsApp)">
-                    <input type="text" id="shortcut-link" class="input-field" placeholder="Enlace de la App (Ej: whatsapp://)">
-                `;
+                function renderForm(type) {
+                    const nameValue = shortcut ? shortcut.name : '';
+                    let targetValue = '';
+                    if (shortcut) {
+                        targetValue = type === 'call' ? shortcut.target.replace('tel:', '') : shortcut.target;
+                    }
+                    
+                    const callForm = `
+                        <input type="text" id="shortcut-name" class="input-field" placeholder="Nombre (Ej: Casa)" value="${nameValue}">
+                        <input type="tel" id="shortcut-phone" class="input-field" placeholder="Número de teléfono" value="${type === 'call' ? targetValue : ''}">
+                    `;
+                    const appForm = `
+                        <input type="text" id="shortcut-name" class="input-field" placeholder="Nombre de la App (Ej: WhatsApp)" value="${nameValue}">
+                        <input type="text" id="shortcut-link" class="input-field" placeholder="Enlace de la App (Ej: whatsapp://)" value="${type === 'app' ? targetValue : ''}">
+                    `;
+                    formContainer.innerHTML = type === 'call' ? callForm : appForm;
+                }
 
                 function selectType(type) {
                     selectedType = type;
-                    if (type === 'call') {
-                        typeCallBtn.classList.add('bg-white', 'text-black');
-                        typeAppBtn.classList.remove('bg-white', 'text-black');
-                        formContainer.innerHTML = callForm;
-                    } else {
-                        typeAppBtn.classList.add('bg-white', 'text-black');
-                        typeCallBtn.classList.remove('bg-white', 'text-black');
-                        formContainer.innerHTML = appForm;
-                    }
+                    typeCallBtn.classList.toggle('bg-white', type === 'call');
+                    typeCallBtn.classList.toggle('text-black', type === 'call');
+                    typeAppBtn.classList.toggle('bg-white', type === 'app');
+                    typeAppBtn.classList.toggle('text-black', type === 'app');
+                    renderForm(type);
                 }
 
                 typeCallBtn.addEventListener('click', () => selectType('call'));
@@ -577,47 +639,39 @@
                 document.getElementById('modal-cancel-btn').addEventListener('click', close, { once: true });
 
                 document.getElementById('modal-save-shortcut-btn').addEventListener('click', () => {
-                    if (!selectedType) {
-                        showModalAlert("Por favor, selecciona un tipo de acceso directo.");
-                        return;
-                    }
-
                     const name = document.getElementById('shortcut-name').value.trim();
-                    let target;
                     let newShortcut;
 
                     if (selectedType === 'call') {
                         const phone = document.getElementById('shortcut-phone').value.trim();
-                        if (name && phone) {
-                            target = `tel:${phone}`;
-                            newShortcut = { type: 'call', name, target };
-                        }
+                        if (name && phone) newShortcut = { type: 'call', name, target: `tel:${phone}` };
                     } else { // app
                         const link = document.getElementById('shortcut-link').value.trim();
-                        if (name && link) {
-                            target = link;
-                            newShortcut = { type: 'app', name, target };
-                        }
+                        if (name && link) newShortcut = { type: 'app', name, target: link };
                     }
 
                     if (newShortcut) {
-                        const unifiedData = dataManager.get();
-                        if (!unifiedData.globalSettings.shortcuts) {
-                            unifiedData.globalSettings.shortcuts = [];
+                        const currentData = dataManager.get();
+                        if (!currentData.globalSettings.shortcuts) currentData.globalSettings.shortcuts = [];
+                        
+                        if (isEditing) {
+                            currentData.globalSettings.shortcuts[shortcutIndex] = newShortcut;
+                        } else {
+                            currentData.globalSettings.shortcuts.push(newShortcut);
                         }
-                        unifiedData.globalSettings.shortcuts.push(newShortcut);
-                        dataManager.save(unifiedData);
+                        dataManager.save(currentData);
                         renderShortcuts();
                         close();
-                        showModalAlert("¡Acceso directo añadido!");
+                        showModalAlert(`¡Acceso directo ${isEditing ? 'actualizado' : 'añadido'}!`);
                     } else {
                         showModalAlert("Por favor, completa todos los campos.");
                     }
                 }, { once: true });
                 
-                selectType('call'); // Seleccionar 'Llamar' por defecto
+                selectType(selectedType);
             }
 
+            // --- Inicialización de la App y Onboarding ---
             function initializeApp() {
                 const unifiedData = dataManager.get();
                 if (unifiedData.myTime?.wallpaper) { applyWallpaper(unifiedData.myTime.wallpaper); }
@@ -667,6 +721,7 @@
             const fingerprintButton = document.getElementById('fingerprint-button');
             if(fingerprintButton) { let holdTimeout; const startHold = (e) => { e.preventDefault(); fingerprintButton.classList.add('holding'); holdTimeout = setTimeout(finishOnboarding, 2000); }; const endHold = () => { fingerprintButton.classList.remove('holding'); clearTimeout(holdTimeout); }; fingerprintButton.addEventListener('mousedown', startHold); fingerprintButton.addEventListener('mouseup', endHold); fingerprintButton.addEventListener('mouseleave', endHold); fingerprintButton.addEventListener('touchstart', startHold, { passive: true }); fingerprintButton.addEventListener('touchend', endHold); }
             
+            // --- Lógica del Carrusel (Hub) con Opciones ---
             function initializeCarousel() {
                 const track = document.getElementById('app-carousel-track');
                 if (!track) return;
@@ -677,12 +732,21 @@
                     { title: 'MyRoute', description: 'Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.', href: 'myroute.html', status: '[ SYSTEM ONLINE ]' },
                     { title: 'MyMemory', description: 'Tu memoria extendida para organizar aficiones, ideas y listas.', href: 'mymemory.html', status: '[ SYSTEM ONLINE ]' }
                 ];
-                const externalApps = (unifiedData.globalSettings.externalApps || []).map(app => ({ ...app, status: '<span class="external-app-tag">APP EXTERNA</span>' }));
+                const externalApps = (unifiedData.globalSettings.externalApps || []).map((app, index) => ({ ...app, status: '<span class="external-app-tag">APP EXTERNA</span>', isExternal: true, index }));
                 const addAppCard = { title: 'Añadir App', description: 'Crea un acceso directo a tus aplicaciones y sitios web favoritos.', action: 'add_app', status: '[ + ]' };
 
                 const allApps = [...internalApps, ...externalApps, addAppCard];
                 track.innerHTML = allApps.map(app => `
-                    <article class="app-card" data-href="${app.href || ''}" data-action="${app.action || ''}">
+                    <article class="app-card" data-href="${app.href || ''}" data-action="${app.action || ''}" ${app.isExternal ? `data-index="${app.index}"` : ''}>
+                        ${app.isExternal ? `
+                        <button class="card-options-btn" data-type="app" data-index="${app.index}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
+                        </button>
+                        <div class="card-options-menu" id="app-options-${app.index}">
+                            <button class="edit-btn" data-type="app" data-index="${app.index}">Editar</button>
+                            <button class="delete-btn delete" data-type="app" data-index="${app.index}">Eliminar</button>
+                        </div>
+                        ` : ''}
                         <div class="card-content">
                             <div class="card-header">
                                 <h2 class="card-title">${app.title || 'Sin Título'}</h2>
@@ -727,17 +791,46 @@
                 
                 cards.forEach((card, index) => {
                     card.addEventListener('click', (e) => {
+                        if (e.target.closest('.card-options-btn, .card-options-menu')) return;
                         if (Math.abs(dragOffset) > clickThreshold) { e.preventDefault(); return; }
                         if (index !== currentIndex) return;
 
                         if (card.dataset.action === 'add_app') {
-                            showAddAppModal();
+                            showAppModal();
                         } else if (card.dataset.href) {
                             card.classList.add('exiting'); 
                             setTimeout(() => { window.location.href = card.dataset.href; }, 400); 
                         }
                     });
                 });
+
+                // Event listeners para los menús de opciones
+                track.querySelectorAll('.card-options-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const index = e.currentTarget.dataset.index;
+                        document.getElementById(`app-options-${index}`).classList.toggle('visible');
+                    });
+                });
+                track.querySelectorAll('.edit-btn[data-type="app"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showAppModal(parseInt(e.currentTarget.dataset.index));
+                    });
+                });
+                track.querySelectorAll('.delete-btn[data-type="app"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const index = parseInt(e.currentTarget.dataset.index);
+                        showModalConfirm("¿Seguro que quieres eliminar esta app?", () => {
+                            const currentData = dataManager.get();
+                            currentData.globalSettings.externalApps.splice(index, 1);
+                            dataManager.save(currentData);
+                            initializeCarousel();
+                        });
+                    });
+                });
+
 
                 const wrapper = document.getElementById('hub-content');
                 wrapper.addEventListener('mousedown', dragStart);
@@ -752,7 +845,7 @@
                 window.addEventListener('resize', () => updateCardPositions(true));
             }
 
-            // --- LÓGICA DE NAVEGACIÓN POR GESTOS ---
+            // --- LÓGICA DE NAVEGACIÓN POR GESTOS (DOCK) ---
             function initializeNavigation() {
                 const contentCarousel = document.getElementById('main-content-carousel');
                 const dock = document.getElementById('bottom-dock');
@@ -837,66 +930,36 @@
             function renderNotes() {
                 const notesGrid = document.getElementById('notes-grid');
                 if (!notesGrid) return;
-
                 const data = dataManager.get();
-                const recentNotes = (data.myMemory?.memories || [])
-                    .sort((a, b) => new Date(b.date) - new Date(a.date))
-                    .slice(0, 2);
-
+                const recentNotes = (data.myMemory?.memories || []).flatMap(memory => memory.items || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 4);
                 let contentHTML = '';
                 if (recentNotes.length > 0) {
-                    contentHTML = recentNotes.map(note => {
-                        const content = note.content || ''; 
-                        return `
+                    contentHTML = recentNotes.map(note => `
                         <div class="small-card">
-                            <h3 class="small-card-title">${note.title || 'Nota sin título'}</h3>
-                            <p class="small-card-content">${content.substring(0, 80)}${content.length > 80 ? '...' : ''}</p>
-                        </div>
-                    `}).join('');
-                     notesGrid.innerHTML = `${contentHTML} <a href="mymemory.html" class="action-button col-span-full">Ver más / Editar</a>`;
+                            <h3 class="small-card-title">${note.title.substring(0, 30)}${note.title.length > 30 ? '...' : ''}</h3>
+                            <p class="small-card-content">${new Date(note.timestamp).toLocaleDateString()}</p>
+                        </div>`).join('');
+                     notesGrid.innerHTML = `${contentHTML} <a href="mymemory.html" class="action-button col-span-full">Ver todas las notas</a>`;
                 } else {
-                    contentHTML = `
-                        <div class="small-card items-center justify-center text-center col-span-full cursor-pointer" onclick="window.location.href='mymemory.html'">
-                            <h3 class="small-card-title">Añadir Nota</h3>
-                            <p class="small-card-content text-4xl mt-2">+</p>
-                        </div>
-                    `;
-                    notesGrid.innerHTML = contentHTML;
+                    notesGrid.innerHTML = `<div class="small-card items-center justify-center text-center col-span-full cursor-pointer" onclick="window.location.href='mymemory.html'"><h3 class="small-card-title">Añadir Nota</h3><p class="small-card-content text-4xl mt-2">+</p></div>`;
                 }
             }
             
             function renderTodos() {
                 const todosGrid = document.getElementById('todos-grid');
                 if (!todosGrid) return;
-
                 const data = dataManager.get();
-                const pendingTodos = (data.myTime?.tasks || []).filter(task => task && !task.completed);
-
+                const pendingTodos = (data.myTime?.tasks || []).filter(task => task && !task.completed).sort((a,b) => (a.dueDate && b.dueDate) ? new Date(a.dueDate) - new Date(b.dueDate) : a.dueDate ? -1 : 1).slice(0, 4);
                 let contentHTML = '';
                 if (pendingTodos.length > 0) {
-                    contentHTML = pendingTodos.map(todo => {
-                        const subtasks = todo.subtasks || [];
-                        const subtasksHTML = (subtasks.length > 0)
-                            ? `<div class="mt-2 space-y-1">${subtasks.map(sub => `<p class="text-sm text-gray-400 ml-4">- ${sub.text || ''}</p>`).join('')}</div>`
-                            : '';
-
-                        return `
-                            <div class="small-card col-span-full">
-                                <h3 class="small-card-title">${todo.text || 'Tarea sin descripción'}</h3>
-                                ${subtasksHTML}
-                            </div>
-                        `;
-                    }).join('');
+                    contentHTML = pendingTodos.map(todo => `
+                        <div class="small-card col-span-full">
+                            <h3 class="small-card-title">${todo.text || todo.title || 'Tarea sin descripción'}</h3>
+                            ${todo.dueDate ? `<p class="text-xs text-secondary mt-1">Vence: ${new Date(todo.dueDate).toLocaleDateString()}</p>` : ''}
+                        </div>`).join('');
                     todosGrid.innerHTML = `${contentHTML}<a href="mytime.html" class="action-button col-span-full">Gestionar Tareas</a>`;
-
                 } else {
-                    contentHTML = `
-                        <div class="small-card items-center justify-center text-center col-span-full cursor-pointer" onclick="window.location.href='mytime.html'">
-                            <h3 class="small-card-title">Añadir Tarea</h3>
-                            <p class="small-card-content text-4xl mt-2">+</p>
-                        </div>
-                    `;
-                    todosGrid.innerHTML = contentHTML;
+                    todosGrid.innerHTML = `<div class="small-card items-center justify-center text-center col-span-full cursor-pointer" onclick="window.location.href='mytime.html'"><h3 class="small-card-title">Añadir Tarea</h3><p class="small-card-content text-4xl mt-2">+</p></div>`;
                 }
             }
 
@@ -907,10 +970,17 @@
                 const data = dataManager.get();
                 const shortcuts = data.globalSettings?.shortcuts || [];
 
-                const shortcutsHTML = shortcuts.map(shortcut => {
+                const shortcutsHTML = shortcuts.map((shortcut, index) => {
                     const icon = shortcut.type === 'call' ? '📞' : '🚀';
                     return `
-                        <div class="small-card text-center items-center justify-center cursor-pointer" data-target="${shortcut.target || ''}">
+                        <div class="small-card text-center items-center justify-center cursor-pointer" data-target="${shortcut.target || ''}" data-index="${index}">
+                            <button class="card-options-btn" data-type="shortcut" data-index="${index}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
+                            </button>
+                            <div class="card-options-menu" id="shortcut-options-${index}">
+                                <button class="edit-btn" data-type="shortcut" data-index="${index}">Editar</button>
+                                <button class="delete-btn delete" data-type="shortcut" data-index="${index}">Eliminar</button>
+                            </div>
                             <h3 class="small-card-title">${shortcut.name || 'Acceso sin nombre'}</h3>
                             <p class="small-card-content text-4xl mt-2">${icon}</p>
                         </div>
@@ -927,15 +997,40 @@
                 shortcutsGrid.innerHTML = shortcutsHTML + addCardHTML;
 
                 shortcutsGrid.querySelectorAll('.small-card[data-target]').forEach(card => {
-                    card.addEventListener('click', () => {
+                    card.addEventListener('click', (e) => {
+                        if (e.target.closest('.card-options-btn, .card-options-menu')) return;
                         const target = card.dataset.target;
-                        if (target) {
-                            window.location.href = target;
-                        }
+                        if (target) window.location.href = target;
+                    });
+                });
+                
+                shortcutsGrid.querySelectorAll('.card-options-btn[data-type="shortcut"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const index = e.currentTarget.dataset.index;
+                        document.getElementById(`shortcut-options-${index}`).classList.toggle('visible');
+                    });
+                });
+                shortcutsGrid.querySelectorAll('.edit-btn[data-type="shortcut"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showShortcutModal(parseInt(e.currentTarget.dataset.index));
+                    });
+                });
+                shortcutsGrid.querySelectorAll('.delete-btn[data-type="shortcut"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const index = parseInt(e.currentTarget.dataset.index);
+                        showModalConfirm("¿Seguro que quieres eliminar este acceso directo?", () => {
+                            const currentData = dataManager.get();
+                            currentData.globalSettings.shortcuts.splice(index, 1);
+                            dataManager.save(currentData);
+                            renderShortcuts();
+                        });
                     });
                 });
 
-                document.getElementById('add-shortcut-btn').addEventListener('click', showAddShortcutModal);
+                document.getElementById('add-shortcut-btn').addEventListener('click', () => showShortcutModal());
             }
 
             initializeApp();
