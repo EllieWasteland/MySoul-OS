@@ -15,6 +15,11 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
+    <!-- Google Fonts: Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+
     <!-- Hoja de estilos local -->
     <link rel="stylesheet" href="myroute.css">
 </head>
@@ -29,7 +34,7 @@
     </div>
 
     <!-- Reloj -->
-    <div id="clock-display" class="absolute top-4 left-4 z-10 p-2 rounded-lg shadow-lg font-mono text-lg" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px); color: var(--text-primary);">
+    <div id="clock-display" class="absolute top-4 left-4 z-10 p-2 rounded-lg shadow-lg font-mono text-lg clock-glass">
         --:--:--
     </div>
 
@@ -52,44 +57,73 @@
         </div>
     </div>
 
-    <!-- Controles Inferiores -->
-    <div class="absolute bottom-4 right-4 z-10">
-        <div id="controls-container" class="flex items-center gap-4 p-3 rounded-full shadow-2xl" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
-            <button id="menu-btn" class="btn p-3 rounded-full" style="background-color: var(--light-bg); color: var(--text-primary);"><i class="ph ph-list text-2xl"></i></button>
-            <div id="stats-display" class="hidden items-center gap-4 pr-4" style="color: var(--text-primary);">
-                <div class="text-center">
-                    <p id="stat-distance" class="font-bold text-lg">0.00</p>
-                    <p class="text-xs" style="color: var(--text-secondary);">km</p>
-                </div>
-                <div class="text-center">
-                    <p id="stat-time" class="font-bold text-lg">00:00</p>
-                    <p class="text-xs" style="color: var(--text-secondary);">Tiempo</p>
-                </div>
+    <!-- Controles Iniciales (Solo botón de grabar) -->
+    <div id="initial-controls" class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+        <button id="start-record-btn" class="btn w-20 h-20 rounded-full flex items-center justify-center shadow-2xl" style="background-color: var(--brand-color); color: var(--bg-primary);">
+            <i class="ph ph-play text-5xl"></i>
+        </button>
+    </div>
+
+    <!-- Panel de Estadísticas de Grabación -->
+    <div id="recording-stats-panel" class="hidden absolute bottom-4 left-4 right-4 z-10 p-2 rounded-3xl shadow-2xl flex flex-col space-y-2 glass-effect">
+        <!-- Grid para las estadísticas principales -->
+        <div class="grid grid-cols-2 gap-2 text-center">
+            <!-- Velocidad Actual -->
+            <div class="stat-square">
+                <p id="stat-current-speed" class="font-bold text-xl">0.0</p>
+                <p class="text-xs" style="color: var(--text-secondary);">km/h</p>
             </div>
-            <button id="record-btn" class="btn w-16 h-16 rounded-full flex items-center justify-center shadow-lg" style="background-color: var(--brand-color); color: var(--bg-primary);">
-                <i id="record-icon" class="ph ph-play text-4xl"></i>
-            </button>
+            <!-- Distancia -->
+            <div class="stat-square">
+                <p id="stat-distance" class="font-bold text-xl">0.00</p>
+                <p class="text-xs" style="color: var(--text-secondary);">km</p>
+            </div>
+            <!-- Velocidad Máxima -->
+            <div class="stat-square">
+                <p id="stat-max-speed" class="font-bold text-xl">0.0</p>
+                <p class="text-xs" style="color: var(--text-secondary);">Máxima</p>
+            </div>
+            <!-- Velocidad Promedio -->
+            <div class="stat-square">
+                <p id="stat-avg-speed" class="font-bold text-xl">0.0</p>
+                <p class="text-xs" style="color: var(--text-secondary);">Promedio</p>
+            </div>
         </div>
+        
+        <!-- Altimetría -->
+        <div class="stat-pill p-2 h-12">
+            <canvas id="altimetry-canvas"></canvas>
+        </div>
+
+        <!-- Tiempo -->
+        <div class="stat-pill text-center p-1">
+            <p id="stat-time" class="font-mono font-bold text-xl">00:00:00</p>
+        </div>
+
+        <!-- Botón de Parar -->
+        <button id="stop-record-btn" class="btn w-full font-bold py-2 rounded-full text-base shadow-lg" style="background-color: var(--brand-color); color: var(--bg-primary);">
+            Parar
+        </button>
     </div>
     
     <!-- Controles Superiores Derechos -->
     <div class="absolute top-4 right-4 z-10 flex flex-col gap-2">
-         <button id="recenter-btn" class="btn p-3 rounded-full shadow-lg" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);"><i class="ph ph-crosshair text-2xl"></i></button>
+         <button id="recenter-btn" title="Centrar y Fijar Vista" class="btn p-3 rounded-full shadow-lg glass-effect-button"><i class="ph ph-crosshair text-2xl"></i></button>
+         <button id="menu-btn" class="btn p-3 rounded-full shadow-lg glass-effect-button"><i class="ph ph-list text-2xl"></i></button>
     </div>
     
     <!-- Botón para Volver al Rastreo -->
-    <button id="back-to-tracking-btn" class="hidden absolute top-20 left-4 z-10 btn p-3 rounded-full shadow-lg" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
+    <button id="back-to-tracking-btn" class="hidden absolute top-20 left-4 z-10 btn p-3 rounded-full shadow-lg glass-effect-button">
         <i class="ph ph-arrow-left text-2xl"></i>
     </button>
     
     <!-- Botón para Volver al Hub Principal -->
-    <a href="index.html" class="absolute bottom-4 left-4 z-10 btn p-3 rounded-full shadow-lg" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
+    <a href="index.html" class="absolute bottom-4 left-4 z-10 btn p-3 rounded-full shadow-lg glass-effect-button">
         <i class="ph ph-arrow-u-up-left text-2xl"></i>
     </a>
 
-
     <!-- Panel Lateral -->
-    <div id="side-panel" class="hidden side-panel fixed top-0 right-0 h-full w-full max-w-sm z-30 shadow-2xl p-4 flex flex-col" style="background-color: var(--bg-primary); border-left: 1px solid var(--border-color);">
+    <div id="side-panel" class="hidden side-panel fixed top-0 right-0 h-full w-full max-w-sm z-30 shadow-2xl p-4 flex flex-col" style="background-color: var(--bg-secondary); border-left: 1px solid var(--border-color);">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-bold">Mis Rutas</h2>
             <button id="close-panel-btn" class="p-2"><i class="ph ph-x text-2xl"></i></button>
@@ -101,29 +135,27 @@
             <h3 class="text-lg font-bold mb-3">Ajustes</h3>
             <div class="space-y-4">
                 <div>
-                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Tema de la aplicación</p>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Tema</p>
                     <div id="theme-selector" class="flex gap-2">
-                        <button data-theme="dark" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Oscuro</button>
-                        <button data-theme="light" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Claro</button>
-                        <button data-theme="black" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Negro</button>
+                        <button data-theme="dark" class="theme-btn flex-1 py-2 rounded-lg text-sm">Oscuro</button>
+                        <button data-theme="light" class="theme-btn flex-1 py-2 rounded-lg text-sm">Claro</button>
                     </div>
                 </div>
-                
-                <!-- Grupo de Gestión de Rutas -->
                 <div>
                     <p class="text-sm mb-2" style="color: var(--text-secondary);">Gestión de Rutas</p>
                     <div class="flex gap-2">
-                        <button id="export-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Exportar Rutas</button>
-                        <button id="import-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Importar Rutas</button>
+                        <button id="export-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm">Exportar</button>
+                        <button id="import-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm">Importar</button>
                     </div>
                 </div>
-
-                <!-- Grupo de Mapa Offline -->
+                <!-- **MODIFICADO**: Nueva sección para el modo offline -->
                 <div>
                     <p class="text-sm mb-2" style="color: var(--text-secondary);">Mapa Offline</p>
-                    <button id="download-map-btn" class="theme-btn w-full py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Descargar Mapa (50x50km)</button>
-                    <p id="offline-mode-indicator" class="hidden text-xs text-center mt-2" style="color: var(--secondary-color);">
-                        Modo offline activado. Para salir, reinicia la aplicación.
+                     <div class="flex gap-2">
+                        <button id="toggle-offline-mode-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm">Activar Modo Offline</button>
+                    </div>
+                    <p id="offline-mode-indicator" class="hidden text-xs text-center mt-2" style="color: var(--text-secondary);">
+                        Modo offline activado.
                     </p>
                 </div>
             </div>
