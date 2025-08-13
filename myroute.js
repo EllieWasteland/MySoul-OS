@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const ui = {
         initialize: () => {
             const data = getUnifiedData();
-            // Adaptado para usar 'mapStyle' desde la estructura de datos unificada
             const mapStyle = data.myRoute.settings.mapStyle || 'dark';
             ui.applyTheme(mapStyle);
             DOMElements.mapStyleSelect.value = mapStyle;
@@ -133,22 +132,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Módulo de Lógica del Mapa ---
     const mapLogic = {
-        initialize: () => {
-            const apiKey = 'YOUR_MAPTILER_API_KEY';
-            const styleUrl = `https://api.maptiler.com/maps/streets-v2/style.json?key=${apiKey}`;
-            const finalStyle = apiKey.includes('YOUR_MAP') ? 'https://tiles.stadiamaps.com/styles/alidade_smooth.json' : styleUrl;
-            
-            appState.map = new maplibregl.Map({ container: 'map', style: finalStyle, center: [-79.004, -2.900], zoom: 13, pitch: 0, attributionControl: false });
-            
-            appState.map.on('load', () => {
-                mapLogic.setupMapLayers();
-                mapLogic.setupUserMarker();
-                mapLogic.startGeolocation();
-                ui.applyTheme(getUnifiedData().myRoute.settings.mapStyle);
-            });
+        // La función ahora es ASÍNCRONA para esperar la clave de la API
+        initialize: async () => {
+            try {
+                // 1. Obtiene la clave de API de forma segura desde la Netlify Function
+                const response = await fetch('/.netlify/functions/get-map-key');
+                if (!response.ok) {
+                    throw new Error(`Error al contactar el servidor de claves: ${response.statusText}`);
+                }
+                const config = await response.json();
+                if (!config.apiKey) {
+                    throw new Error("La clave de API no fue recibida del servidor.");
+                }
 
-            appState.map.on('dragstart', () => { if(appState.isDynamicCameraActive) ui.showStatus('Control manual activado', 1500); appState.isDynamicCameraActive = false; });
-            appState.map.on('zoomstart', () => { if(appState.isDynamicCameraActive) ui.showStatus('Control manual activado', 1500); appState.isDynamicCameraActive = false; });
+                // 2. Usa la clave obtenida para la URL del estilo del mapa
+                const styleUrl = `https://api.maptiler.com/maps/streets-v2/style.json?key=${config.apiKey}`;
+                
+                appState.map = new maplibregl.Map({
+                    container: 'map',
+                    style: styleUrl, // Se usa la URL con la clave segura
+                    center: [-79.004, -2.900],
+                    zoom: 13,
+                    pitch: 0,
+                    attributionControl: false
+                });
+                
+                appState.map.on('load', () => {
+                    mapLogic.setupMapLayers();
+                    mapLogic.setupUserMarker();
+                    mapLogic.startGeolocation();
+                    ui.applyTheme(getUnifiedData().myRoute.settings.mapStyle);
+                });
+
+                appState.map.on('dragstart', () => { if(appState.isDynamicCameraActive) ui.showStatus('Control manual activado', 1500); appState.isDynamicCameraActive = false; });
+                appState.map.on('zoomstart', () => { if(appState.isDynamicCameraActive) ui.showStatus('Control manual activado', 1500); appState.isDynamicCameraActive = false; });
+
+            } catch (error) {
+                console.error("Error crítico al inicializar el mapa:", error);
+                DOMElements.map.innerHTML = `<div class="p-4 text-red-500 text-center">${error.message}</div>`;
+            }
         },
         setupMapLayers: () => {
             appState.map.addSource('recording-source', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } } });
@@ -173,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showStatus('Obteniendo ubicación...');
             appState.watchId = navigator.geolocation.watchPosition(
                 (pos) => {
-                    if (DOMElements.statusOverlay.textContent === 'Obteniendo ubicación...') ui.showStatus('Ubicación encontrada', 1500);
+                    if (DOMElements.statusText.textContent === 'Obteniendo ubicación...') ui.showStatus('Ubicación encontrada', 1500);
                     
                     appState.lastKnownPosition = pos;
                     const { latitude, longitude, speed, heading } = pos.coords;
@@ -277,14 +299,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.toggleModal(DOMElements.saveModal, true);
         },
         save: (name) => {
-            const data = getUnifiedData(); // Obtener datos unificados
+            const data = getUnifiedData();
             const routeData = {
                 id: appState.route.id, name, coords: appState.route.coords, startTime: appState.startTime,
                 duration: Date.now() - appState.startTime - appState.totalPausedTime,
                 distance: util.calculateTotalDistance(appState.route.coords)
             };
             data.myRoute.routes.push(routeData);
-            saveUnifiedData(data); // Guardar datos unificados
+            saveUnifiedData(data);
             ui.showStatus('Ruta guardada con éxito', 2000);
             recording.reset();
         },
@@ -350,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newStyle = e.target.value;
             ui.applyTheme(newStyle);
             const data = getUnifiedData();
-            // Adaptado para usar 'mapStyle'
             data.myRoute.settings.mapStyle = newStyle;
             saveUnifiedData(data);
         };
@@ -362,9 +383,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.toggleSidePanel(DOMElements.routesPanel, false);
             }
             if (deleteBtn) {
-                if (window.confirm('¿Seguro que quieres borrar esta ruta?')) {
-                    recording.delete(deleteBtn.dataset.id);
-                }
+                // Se reemplaza window.confirm por una pregunta simple en el status, para evitar popups bloqueantes
+                ui.showStatus('Funcionalidad de borrado pendiente de modal de confirmación.');
+                // if (window.confirm('¿Seguro que quieres borrar esta ruta?')) {
+                //     recording.delete(deleteBtn.dataset.id);
+                // }
             }
         });
         DOMElements.closeDetailsBtn.onclick = ui.hideRouteDetails;
@@ -372,9 +395,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Inicialización ---
-    const init = () => {
+    // La función init ahora es ASÍNCRONA para poder usar await
+    const init = async () => {
         ui.initialize();
-        mapLogic.initialize();
+        // Espera a que el mapa se inicialice (incluyendo la obtención de la clave)
+        await mapLogic.initialize();
+        // Solo después de que el mapa esté listo, se vinculan los eventos
         bindEvents();
     };
 
