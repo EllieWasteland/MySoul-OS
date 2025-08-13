@@ -1,110 +1,98 @@
-// Este archivo centraliza toda la lógica de almacenamiento local.
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { app } from './firebase-config.js';
 
-const UNIFIED_STORAGE_KEY = 'mySoul-data-v1';
-
-/**
- * Proporciona el estado inicial por defecto para toda la aplicación.
- * @returns {object} El objeto de estado por defecto.
- */
-export function getDefaultUnifiedState() {
-    return {
-        myTime: {
-            userName: null,
-            tasks: [],
-            schedule: [],
-            currentView: 'dashboard',
-            selectedTaskId: null,
-            selectedSubjectId: null,
-            tempSubtasks: [],
-            calendarDate: new Date().toISOString(),
-            wallpaper: null,
-            filters: { priority: 'all', tag: 'all' },
-            zenSettings: { pomodoro: 25, shortBreak: 5, longBreak: 15, color: '#00F0FF' },
-            gamification: { streak: 0, lastCompletionDate: null, achievements: [], pomodoroCount: 0 },
-            currentZenTaskId: null
-        },
-        myMemory: {
-            memories: [],
-            settings: { theme: 'dark' }
-        },
-        myRoute: {
-            routes: [],
-            settings: {
-                mapStyle: 'dark' // Clave consistente para el estilo del mapa
-            }
-        },
-        myMood: {
-            entries: []
-        },
-        globalSettings: {
-            onboardingComplete: false,
-            externalApps: [],
-            shortcuts: []
-        }
-    };
-}
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 /**
- * Realiza una fusión profunda de dos objetos.
- * @param {object} target - El objeto de destino.
- * @param {object} source - El objeto fuente.
- * @returns {object} El objeto fusionado.
+ * Realiza una copia de seguridad de los datos de todas las aplicaciones del usuario en Firestore.
+ * Recopila datos de 'mytime', 'mymood', 'mymemory' y 'myroute' desde el localStorage,
+ * los agrupa en un solo objeto y los sube a la nube.
  */
-function deepMerge(target, source) {
-    const output = { ...target };
-    if (isObject(target) && isObject(source)) {
-        Object.keys(source).forEach(key => {
-            if (isObject(source[key])) {
-                if (!(key in target))
-                    Object.assign(output, { [key]: source[key] });
-                else
-                    output[key] = deepMerge(target[key], source[key]);
-            } else {
-                Object.assign(output, { [key]: source[key] });
-            }
-        });
-    }
-    return output;
-}
-
-/**
- * Comprueba si un item es un objeto.
- * @param {*} item - El item a comprobar.
- * @returns {boolean}
- */
-function isObject(item) {
-    return (item && typeof item === 'object' && !Array.isArray(item));
-}
-
-/**
- * Obtiene los datos unificados desde localStorage.
- * Fusiona los datos guardados con el estado por defecto para asegurar que todas las propiedades existan.
- * @returns {object} El estado completo de la aplicación.
- */
-export function getUnifiedData() {
-    const data = localStorage.getItem(UNIFIED_STORAGE_KEY);
-    const defaultState = getDefaultUnifiedState();
-    if (data) {
+export async function backupData() {
+    const user = auth.currentUser;
+    if (user) {
         try {
-            const parsedData = JSON.parse(data);
-            // La fusión profunda asegura que datos guardados antiguos se actualicen con nuevas propiedades del estado por defecto.
-            return deepMerge(defaultState, parsedData);
+            const userId = user.uid;
+            // Recopilar datos de todas las aplicaciones desde localStorage
+            const mytimeData = localStorage.getItem('records');
+            const mymoodData = localStorage.getItem('moods');
+            const mymemoryData = localStorage.getItem('entries');
+            const myrouteData = localStorage.getItem('routes');
+
+            // Crear un objeto de copia de seguridad con todos los datos
+            const backup = {
+                mytime: mytimeData ? JSON.parse(mytimeData) : null,
+                mymood: mymoodData ? JSON.parse(mymoodData) : null,
+                mymemory: mymemoryData ? JSON.parse(mymemoryData) : null,
+                myroute: myrouteData ? JSON.parse(myrouteData) : null,
+                lastBackup: new Date().toISOString()
+            };
+
+            // Guardar el objeto de copia de seguridad en Firestore
+            await setDoc(doc(db, "users", userId, "backup", "alldata"), backup);
+            alert('Copia de seguridad realizada con éxito.');
         } catch (error) {
-            console.error("Error al parsear datos unificados, se retorna al estado por defecto:", error);
-            return defaultState;
+            console.error("Error al hacer la copia de seguridad:", error);
+            alert('Error al hacer la copia de seguridad.');
         }
+    } else {
+        alert('Debes iniciar sesión para hacer una copia de seguridad.');
     }
-    return defaultState;
 }
 
 /**
- * Guarda el objeto de estado unificado en localStorage.
- * @param {object} data - El objeto de estado completo para guardar.
+ * Restaura los datos del usuario desde Firestore al localStorage.
+ * Advierte al usuario que los datos locales actuales se sobrescribirán.
+ * Utiliza un mapa de claves para garantizar que los datos se restauren con las claves correctas.
  */
-export function saveUnifiedData(data) {
-    try {
-        localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(data));
-    } catch (error) {
-        console.error("Error al guardar los datos unificados:", error);
+export async function restoreData() {
+    const user = auth.currentUser;
+    if (user) {
+        if (confirm('¿Estás seguro de que quieres restaurar los datos? Esto sobrescribirá los datos locales actuales.')) {
+            try {
+                const userId = user.uid;
+                const backupRef = doc(db, "users", userId, "backup", "alldata");
+                const backup = await getDoc(backupRef);
+
+                if (backup.exists()) {
+                    const data = backup.data();
+                    
+                    // --- INICIO DE LA CORRECCIÓN ---
+                    // Este mapa traduce las claves usadas en la copia de seguridad (ej. 'mymood')
+                    // a las claves que cada aplicación espera en el localStorage (ej. 'moods').
+                    const keyMap = {
+                        mytime: 'records',
+                        mymood: 'moods',
+                        mymemory: 'entries',
+                        myroute: 'routes'
+                    };
+
+                    // Itera sobre las claves del objeto de copia de seguridad (mytime, mymood, etc.).
+                    for (const backupKey in data) {
+                        if (data.hasOwnProperty(backupKey)) {
+                            // Busca la clave de localStorage correcta usando el mapa.
+                            const localStorageKey = keyMap[backupKey];
+                            // Si se encuentra una clave correspondiente y los datos no son nulos, se guardan.
+                            if (localStorageKey && data[backupKey] !== null) {
+                                localStorage.setItem(localStorageKey, JSON.stringify(data[backupKey]));
+                            }
+                        }
+                    }
+                    // --- FIN DE LA CORRECCIÓN ---
+
+                    alert('Datos restaurados con éxito. La página se recargará.');
+                    window.location.reload();
+                } else {
+                    alert('No se encontró ninguna copia de seguridad.');
+                }
+            } catch (error) {
+                console.error("Error al restaurar los datos:", error);
+                alert('Error al restaurar los datos.');
+            }
+        }
+    } else {
+        alert('Debes iniciar sesión para restaurar los datos.');
     }
 }
