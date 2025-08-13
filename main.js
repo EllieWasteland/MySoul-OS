@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const unifiedData = getUnifiedData();
         const internalApps = [
-            { title: 'MyTasks', description: 'Gestión de tareas y enfoque para maximizar tu productividad.', href: 'mytime.html', status: '[ SYSTEM ONLINE ]' },
+            { title: 'MyTime', description: 'Gestión de tareas , tiempo y enfoque para maximizar tu productividad.', href: 'mytime.html', status: '[ SYSTEM ONLINE ]' },
             { title: 'MyRoute', description: 'Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.', href: 'myroute.html', status: '[ SYSTEM ONLINE ]' },
             { title: 'MyMemory', description: 'Tu memoria extendida para organizar aficiones, ideas y listas.', href: 'mymemory.html', status: '[ SYSTEM ONLINE ]' },
             { title: 'MyMood', description: 'Registra y analiza tu estado de ánimo a lo largo del tiempo.', href: 'mymood.html', status: '[ SYSTEM ONLINE ]' }
@@ -755,3 +755,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
