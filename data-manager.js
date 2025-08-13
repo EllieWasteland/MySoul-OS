@@ -33,9 +33,8 @@ export function getDefaultUnifiedState() {
                 mapStyle: 'dark' // Clave consistente para el estilo del mapa
             }
         },
-        myMood: {
-            entries: []
-        },
+        // CORRECCIÓN: myMood ahora es un array directamente, como en Firestore.
+        myMood: [],
         globalSettings: {
             onboardingComplete: false,
             externalApps: [],
@@ -54,7 +53,10 @@ function deepMerge(target, source) {
     const output = { ...target };
     if (isObject(target) && isObject(source)) {
         Object.keys(source).forEach(key => {
-            if (isObject(source[key])) {
+            // Si la clave es myMood y el source es un array, lo reemplazamos directamente
+            if (key === 'myMood' && Array.isArray(source[key])) {
+                 output[key] = source[key];
+            } else if (isObject(source[key])) {
                 if (!(key in target))
                     Object.assign(output, { [key]: source[key] });
                 else
