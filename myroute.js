@@ -101,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRoutesList: () => {
             const routes = getUnifiedData().myRoute.routes || [];
             DOMElements.routesList.innerHTML = routes.length ? '' : '<li class="text-center p-4 text-secondary">No tienes rutas guardadas.</li>';
+            // Usamos slice() para crear una copia antes de invertir, para no mutar el array original
             routes.slice().reverse().forEach(route => {
                 const li = document.createElement('li');
                 li.className = 'route-item flex items-center justify-between p-4 rounded-lg bg-light';
@@ -108,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.innerHTML = `
                     <div class="flex-grow cursor-pointer view-route-btn">
                         <p class="font-bold truncate">${route.name}</p>
-                        <p class="text-sm text-secondary">${route.distance.toFixed(2)} km - ${new Date(route.startTime).toLocaleDateString()}</p>
+                        <p class="text-sm text-secondary">${route.distance.toFixed(2)} km - ${new Date(route.date).toLocaleDateString()}</p>
                     </div>
                     <button data-id="${route.id}" class="delete-route-btn text-red-500 p-2 rounded-full hover:bg-red-500/10"><i class="ph ph-trash text-xl"></i></button>`;
                 DOMElements.routesList.appendChild(li);
@@ -118,11 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const route = getUnifiedData().myRoute.routes.find(r => r.id == routeId);
             if (!route) return;
             DOMElements.detailsRouteName.textContent = route.name;
-            DOMElements.detailsRouteDate.textContent = new Date(route.startTime).toLocaleDateString();
+            DOMElements.detailsRouteDate.textContent = new Date(route.date).toLocaleDateString();
             DOMElements.detailsRouteDistance.textContent = `${route.distance.toFixed(2)} km`;
-            DOMElements.detailsRouteDuration.textContent = util.formatTime(route.duration);
+            DOMElements.detailsRouteDuration.textContent = util.formatTime(route.durationMs);
             ui.showPanel(DOMElements.routeDetailsPanel, true);
-            mapLogic.viewRouteOnMap(route.coords);
+            // El path es un string, necesitamos parsearlo para usarlo en el mapa
+            const coords = JSON.parse(route.path);
+            mapLogic.viewRouteOnMap(coords);
         },
         hideRouteDetails: () => {
             ui.showPanel(DOMElements.initialControls, true);
@@ -132,25 +135,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Módulo de Lógica del Mapa ---
     const mapLogic = {
-        // La función ahora es ASÍNCRONA para esperar la clave de la API
         initialize: async () => {
             try {
-                // 1. Obtiene la clave de API de forma segura desde la Netlify Function
                 const response = await fetch('/.netlify/functions/get-map-key');
-                if (!response.ok) {
-                    throw new Error(`Error al contactar el servidor de claves: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`Error al contactar el servidor de claves: ${response.statusText}`);
+                
                 const config = await response.json();
-                if (!config.apiKey) {
-                    throw new Error("La clave de API no fue recibida del servidor.");
-                }
+                if (!config.apiKey) throw new Error("La clave de API no fue recibida del servidor.");
 
-                // 2. Usa la clave obtenida para la URL del estilo del mapa
                 const styleUrl = `https://api.maptiler.com/maps/streets-v2/style.json?key=${config.apiKey}`;
                 
                 appState.map = new maplibregl.Map({
                     container: 'map',
-                    style: styleUrl, // Se usa la URL con la clave segura
+                    style: styleUrl,
                     center: [-79.004, -2.900],
                     zoom: 13,
                     pitch: 0,
@@ -300,11 +297,17 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         save: (name) => {
             const data = getUnifiedData();
+            
+            // **MODIFICACIÓN: Crear el objeto con el formato solicitado**
             const routeData = {
-                id: appState.route.id, name, coords: appState.route.coords, startTime: appState.startTime,
-                duration: Date.now() - appState.startTime - appState.totalPausedTime,
-                distance: util.calculateTotalDistance(appState.route.coords)
+                id: appState.route.id,
+                name: name,
+                date: new Date(appState.startTime).toISOString(),
+                durationMs: Date.now() - appState.startTime - appState.totalPausedTime,
+                distance: util.calculateTotalDistance(appState.route.coords),
+                path: JSON.stringify(appState.route.coords) // Convertir el array de coordenadas a un string JSON
             };
+
             data.myRoute.routes.push(routeData);
             saveUnifiedData(data);
             ui.showStatus('Ruta guardada con éxito', 2000);
@@ -395,12 +398,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Inicialización ---
-    // La función init ahora es ASÍNCRONA para poder usar await
     const init = async () => {
         ui.initialize();
-        // Espera a que el mapa se inicialice (incluyendo la obtención de la clave)
         await mapLogic.initialize();
-        // Solo después de que el mapa esté listo, se vinculan los eventos
         bindEvents();
     };
 
