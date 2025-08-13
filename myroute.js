@@ -101,13 +101,13 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRoutesList: () => {
             const routes = getUnifiedData().myRoute.routes || [];
             DOMElements.routesList.innerHTML = routes.length ? '' : '<li class="text-center p-4 text-secondary">No tienes rutas guardadas.</li>';
-            // Usamos slice() para crear una copia antes de invertir, para no mutar el array original
             routes.slice().reverse().forEach(route => {
                 const li = document.createElement('li');
                 li.className = 'route-item flex items-center justify-between p-4 rounded-lg bg-light';
                 li.dataset.routeId = route.id;
+                // **CORRECCIÓN: Se añade min-w-0 para que la clase truncate funcione correctamente en un contenedor flex**
                 li.innerHTML = `
-                    <div class="flex-grow cursor-pointer view-route-btn">
+                    <div class="flex-grow cursor-pointer view-route-btn min-w-0">
                         <p class="font-bold truncate">${route.name}</p>
                         <p class="text-sm text-secondary">${route.distance.toFixed(2)} km - ${new Date(route.date).toLocaleDateString()}</p>
                     </div>
@@ -123,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
             DOMElements.detailsRouteDistance.textContent = `${route.distance.toFixed(2)} km`;
             DOMElements.detailsRouteDuration.textContent = util.formatTime(route.durationMs);
             ui.showPanel(DOMElements.routeDetailsPanel, true);
-            // El path es un string, necesitamos parsearlo para usarlo en el mapa
             const coords = JSON.parse(route.path);
             mapLogic.viewRouteOnMap(coords);
         },
@@ -298,14 +297,13 @@ document.addEventListener('DOMContentLoaded', () => {
         save: (name) => {
             const data = getUnifiedData();
             
-            // **MODIFICACIÓN: Crear el objeto con el formato solicitado**
             const routeData = {
                 id: appState.route.id,
                 name: name,
                 date: new Date(appState.startTime).toISOString(),
                 durationMs: Date.now() - appState.startTime - appState.totalPausedTime,
                 distance: util.calculateTotalDistance(appState.route.coords),
-                path: JSON.stringify(appState.route.coords) // Convertir el array de coordenadas a un string JSON
+                path: JSON.stringify(appState.route.coords)
             };
 
             data.myRoute.routes.push(routeData);
@@ -386,11 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.toggleSidePanel(DOMElements.routesPanel, false);
             }
             if (deleteBtn) {
-                // Se reemplaza window.confirm por una pregunta simple en el status, para evitar popups bloqueantes
-                ui.showStatus('Funcionalidad de borrado pendiente de modal de confirmación.');
-                // if (window.confirm('¿Seguro que quieres borrar esta ruta?')) {
-                //     recording.delete(deleteBtn.dataset.id);
-                // }
+                // **CORRECCIÓN: Se activa la funcionalidad de borrado**
+                recording.delete(deleteBtn.dataset.id);
             }
         });
         DOMElements.closeDetailsBtn.onclick = ui.hideRouteDetails;
