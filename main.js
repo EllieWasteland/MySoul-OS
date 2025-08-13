@@ -19,8 +19,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// El dataManager local ha sido eliminado. Ahora usamos las funciones importadas.
-
 document.addEventListener('DOMContentLoaded', () => {
     const onboardingContainer = document.getElementById('onboarding-container');
     const mainOsContainer = document.getElementById('main-os-container');
@@ -42,21 +40,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            // Obtener datos del gestor central
             const dataToSave = getUnifiedData();
-            // Crear una copia profunda para no modificar el objeto en memoria
             const sanitizedData = JSON.parse(JSON.stringify(dataToSave));
-
-            // Manejar correctamente el array 'coords' de myRoute para Firestore
             if (sanitizedData.myRoute && Array.isArray(sanitizedData.myRoute.routes)) {
                 sanitizedData.myRoute.routes.forEach(route => {
-                    // Convertir el array 'coords' a un string JSON
                     if (Array.isArray(route.coords)) {
                         route.coords = JSON.stringify(route.coords);
                     }
                 });
             }
-            
             const userDocRef = doc(db, `users/${user.uid}/data`, 'mainBackup');
             await setDoc(userDocRef, sanitizedData);
             showModalAlert("Tus datos se han guardado en la nube con éxito.", "Guardado Completo");
@@ -77,24 +69,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const docSnap = await getDoc(userDocRef);
             if (docSnap.exists()) {
                 const cloudData = docSnap.data();
-
-                // Manejar correctamente el string 'coords' desde Firestore
                 if (cloudData.myRoute && Array.isArray(cloudData.myRoute.routes)) {
                     cloudData.myRoute.routes.forEach(route => {
                         if (typeof route.coords === 'string') {
                             try {
-                                // Convertir el string JSON de vuelta a un array
                                 route.coords = JSON.parse(route.coords);
                             } catch(e) {
                                 console.error("Failed to parse route coords:", e);
-                                route.coords = []; // Fallback a un array vacío en caso de error
+                                route.coords = [];
                             }
                         }
                     });
                 }
-
                 showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => {
-                    // Guardar los datos procesados usando el gestor central
                     saveUnifiedData(cloudData);
                     showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito");
                     setTimeout(() => window.location.reload(), 1500);
@@ -412,10 +399,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     onAuthStateChanged(auth, (user) => {
-        const unifiedData = getUnifiedData();
+        let unifiedData = getUnifiedData();
         const userPhoto = document.getElementById('user-photo');
         const headerUsername = document.getElementById('header-username');
         if (user) {
+            // Guarda el nombre de Google en los datos unificados para que otras apps puedan usarlo.
+            if (user.displayName && unifiedData.myTime.userName !== user.displayName) {
+                unifiedData.myTime.userName = user.displayName;
+                saveUnifiedData(unifiedData);
+            }
+
             userPhoto.src = user.photoURL || `https://placehold.co/40x40/FFFFFF/000000?text=${user.displayName?.charAt(0) || 'U'}`;
             headerUsername.textContent = user.displayName || 'Usuario';
             if (!unifiedData.globalSettings.onboardingComplete) { finishOnboarding(); }
@@ -755,7 +748,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeApp();
     
-    // FIX: Reset card state on page show (e.g., when using browser back button)
     window.addEventListener('pageshow', (event) => {
         const exitingCards = document.querySelectorAll('.app-card.exiting');
         exitingCards.forEach(card => {

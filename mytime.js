@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const buttons = {
         backToDashboard: getEl('back-to-dashboard-btn'), editTask: getEl('edit-task-btn'),
-        deleteTask: getEl('delete-task-btn'), // Botón nuevo
+        deleteTask: getEl('delete-task-btn'),
         resetApp: getEl('reset-app-btn'),
         saveWallpaperUrl: getEl('save-wallpaper-url-btn'), resetWallpaper: getEl('reset-wallpaper-btn'),
         startZenSession: getEl('start-zen-session-btn'), exitZen: getEl('exit-zen-btn'),
@@ -85,14 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const achievementToast = { element: getEl('achievement-toast'), content: getEl('achievement-toast-content') };
 
     // --- ESTADO Y LÓGICA DE DATOS ---
-    let unifiedData = getUnifiedData();
-    let state = unifiedData.myTime;
+    let unifiedData;
+    let state;
 
-    if (!state.settings) {
-        state.settings = { color: '#FF4500' };
+    if (!state?.settings) {
+        // Fallback in case state is not fully initialized
+        state = { ...state, settings: { color: '#FF4500' } };
     }
-    if (!state.zenSettings) {
-        state.zenSettings = { pomodoro: 25, shortBreak: 5, longBreak: 15 };
+    if (!state?.zenSettings) {
+        state = { ...state, zenSettings: { pomodoro: 25, shortBreak: 5, longBreak: 15 } };
     }
 
     let formState = {};
@@ -175,7 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function renderDashboard() {
         if(!containers.greetingText) return;
-        containers.greetingText.textContent = `Hola, ${state.userName}!`;
+        
+        // CORRECCIÓN: Obtener el nombre de usuario directamente de los datos unificados con un fallback.
+        const userName = unifiedData.myTime?.userName || 'Usuario';
+        containers.greetingText.textContent = `Hola, ${userName}!`;
+
         const pendingCount = state.tasks.filter(t => !t.completed).length;
         containers.dashboardSummary.textContent = pendingCount > 0 ? `Tienes ${pendingCount} tarea${pendingCount > 1 ? 's' : ''} pendiente${pendingCount > 1 ? 's' : ''}.` : '¡No tienes tareas pendientes!';
         containers.motivationalQuote.textContent = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
@@ -259,18 +264,16 @@ document.addEventListener('DOMContentLoaded', () => {
             await dataService.saveData(state);
 
             hideHiddenView('details');
-            // Actualizar la vista actual para reflejar la eliminación
             const activeView = document.querySelector('.view.active').id;
             switchView(activeView);
         }
     }
 
-
     // --- EVENT HANDLERS ---
     buttons.fabAddTask.addEventListener('click', () => openMultiStepForm());
     buttons.backToDashboard.addEventListener('click', () => hideHiddenView('details'));
     buttons.editTask.addEventListener('click', () => { if (state.selectedTaskId) { const task = state.tasks.find(t => t.id === state.selectedTaskId); hideHiddenView('details'); openMultiStepForm(task); } });
-    buttons.deleteTask.addEventListener('click', deleteTaskHandler); // Event listener para el nuevo botón
+    buttons.deleteTask.addEventListener('click', deleteTaskHandler);
     buttons.startZenSession.addEventListener('click', () => { state.currentZenTaskId = state.selectedTaskId; openZenSetup(); });
     buttons.dashboardZen.addEventListener('click', () => { state.currentZenTaskId = null; openZenSetup(); });
     buttons.exitZen.addEventListener('click', stopZenMode);
@@ -307,9 +310,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZACIÓN ---
     async function initApp() {
-        if (!state.userName) {
-            state.userName = "Usuario";
-        }
+        // CORRECCIÓN: Obtener los datos más recientes al iniciar la app.
+        unifiedData = getUnifiedData();
+        state = unifiedData.myTime;
+        
         applyAppearance();
         stopZenMode();
         setupNavigation();
