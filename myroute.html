@@ -23,162 +23,127 @@
     <!-- Hoja de estilos local -->
     <link rel="stylesheet" href="myroute.css">
 </head>
-<body class="overflow-hidden h-screen flex flex-col">
+<body class="theme-dark overflow-hidden h-screen flex flex-col">
 
-    <!-- Contenedor del Mapa -->
-    <div id="map-container" class="flex-grow relative">
-        <div id="map"></div>
-        <div id="status-overlay" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-20">
-            <p id="status-text" class="text-white text-lg">Iniciando y obteniendo ubicación...</p>
-        </div>
-    </div>
-
-    <!-- Reloj -->
-    <div id="clock-display" class="absolute top-4 left-4 z-10 p-2 rounded-lg shadow-lg font-mono text-lg clock-glass">
-        --:--:--
-    </div>
-
-    <!-- Panel de Estadísticas de Ruta Guardada -->
-    <div id="route-stats-panel" class="hidden absolute top-0 left-0 right-0 p-4 bg-black bg-opacity-70 backdrop-blur-sm z-10">
-        <h3 id="stats-panel-name" class="text-lg font-bold text-white text-center truncate">Nombre de la Ruta</h3>
-        <div class="flex justify-around mt-2 text-center">
-            <div>
-                <p id="stats-panel-dist" class="text-xl font-semibold text-white">0.00</p>
-                <p class="text-xs text-neutral-400">Distancia (km)</p>
-            </div>
-            <div>
-                <p id="stats-panel-time" class="text-xl font-semibold text-white">00:00:00</p>
-                <p class="text-xs text-neutral-400">Duración</p>
-            </div>
-            <div>
-                <p id="stats-panel-date" class="text-xl font-semibold text-white">--/--/----</p>
-                <p class="text-xs text-neutral-400">Fecha</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Controles Iniciales (Solo botón de grabar) -->
-    <div id="initial-controls" class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
-        <button id="start-record-btn" class="btn w-20 h-20 rounded-full flex items-center justify-center shadow-2xl" style="background-color: var(--brand-color); color: var(--bg-primary);">
-            <i class="ph ph-play text-5xl"></i>
-        </button>
-    </div>
-
-    <!-- Panel de Estadísticas de Grabación -->
-    <div id="recording-stats-panel" class="hidden absolute bottom-4 left-4 right-4 z-10 p-2 rounded-3xl shadow-2xl flex flex-col space-y-2 glass-effect">
-        <!-- Grid para las estadísticas principales -->
-        <div class="grid grid-cols-2 gap-2 text-center">
-            <!-- Velocidad Actual -->
-            <div class="stat-square">
-                <p id="stat-current-speed" class="font-bold text-xl">0.0</p>
-                <p class="text-xs" style="color: var(--text-secondary);">km/h</p>
-            </div>
-            <!-- Distancia -->
-            <div class="stat-square">
-                <p id="stat-distance" class="font-bold text-xl">0.00</p>
-                <p class="text-xs" style="color: var(--text-secondary);">km</p>
-            </div>
-            <!-- Velocidad Máxima -->
-            <div class="stat-square">
-                <p id="stat-max-speed" class="font-bold text-xl">0.0</p>
-                <p class="text-xs" style="color: var(--text-secondary);">Máxima</p>
-            </div>
-            <!-- Velocidad Promedio -->
-            <div class="stat-square">
-                <p id="stat-avg-speed" class="font-bold text-xl">0.0</p>
-                <p class="text-xs" style="color: var(--text-secondary);">Promedio</p>
-            </div>
-        </div>
-        
-        <!-- Altimetría -->
-        <div class="stat-pill p-2 h-12">
-            <canvas id="altimetry-canvas"></canvas>
-        </div>
-
-        <!-- Tiempo -->
-        <div class="stat-pill text-center p-1">
-            <p id="stat-time" class="font-mono font-bold text-xl">00:00:00</p>
-        </div>
-
-        <!-- Botón de Parar -->
-        <button id="stop-record-btn" class="btn w-full font-bold py-2 rounded-full text-base shadow-lg" style="background-color: var(--brand-color); color: var(--bg-primary);">
-            Parar
-        </button>
-    </div>
-    
-    <!-- Controles Superiores Derechos -->
-    <div class="absolute top-4 right-4 z-10 flex flex-col gap-2">
-         <button id="recenter-btn" title="Centrar y Fijar Vista" class="btn p-3 rounded-full shadow-lg glass-effect-button"><i class="ph ph-crosshair text-2xl"></i></button>
-         <button id="menu-btn" class="btn p-3 rounded-full shadow-lg glass-effect-button"><i class="ph ph-list text-2xl"></i></button>
-    </div>
-    
-    <!-- Botón para Volver al Rastreo -->
-    <button id="back-to-tracking-btn" class="hidden absolute top-20 left-4 z-10 btn p-3 rounded-full shadow-lg glass-effect-button">
-        <i class="ph ph-arrow-left text-2xl"></i>
-    </button>
-    
-    <!-- Botón para Volver al Hub Principal -->
-    <a href="index.html" class="absolute bottom-4 left-4 z-10 btn p-3 rounded-full shadow-lg glass-effect-button">
-        <i class="ph ph-arrow-u-up-left text-2xl"></i>
+    <!-- Botón para volver al Hub Principal -->
+    <a href="index.html" class="fixed top-5 left-5 z-10 btn-secondary w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl" aria-label="Volver al inicio">
+        <i class="ph ph-arrow-left"></i>
     </a>
 
-    <!-- Panel Lateral -->
-    <div id="side-panel" class="hidden side-panel fixed top-0 right-0 h-full w-full max-w-sm z-30 shadow-2xl p-4 flex flex-col" style="background-color: var(--bg-secondary); border-left: 1px solid var(--border-color);">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold">Mis Rutas</h2>
-            <button id="close-panel-btn" class="p-2"><i class="ph ph-x text-2xl"></i></button>
+    <!-- Contenedor principal del mapa -->
+    <div id="map" class="flex-grow"></div>
+
+    <!-- Overlay de estado -->
+    <div id="status-overlay" class="fixed top-5 left-1/2 -translate-x-1/2 bg-black bg-opacity-70 text-white text-sm rounded-full px-4 py-2 z-20 opacity-0 transition-opacity duration-300">
+        <p id="status-text">Estado</p>
+    </div>
+
+    <!-- Controles iniciales -->
+    <div id="initial-controls" class="bottom-panel fixed bottom-0 left-0 right-0 p-4 pb-8 z-10 flex justify-center">
+        <button id="start-record-btn" class="btn-primary text-lg font-bold py-4 px-8 rounded-full shadow-lg flex items-center gap-2">
+            <i class="ph-fill ph-dot"></i>
+            <span>Iniciar Ruta</span>
+        </button>
+    </div>
+
+    <!-- Panel de estadísticas de grabación -->
+    <div id="recording-stats-panel" class="bottom-panel fixed bottom-0 left-0 right-0 p-4 z-10">
+        <div class="stat-pill p-2 flex items-center justify-between rounded-2xl backdrop-blur-md">
+            <div class="flex-1 text-center">
+                <p class="text-xs text-secondary">Tiempo</p>
+                <p id="stat-time" class="text-lg font-bold">00:00:00</p>
+            </div>
+            <div class="flex-1 text-center border-x border-glass">
+                <p class="text-xs text-secondary">Distancia (km)</p>
+                <p id="stat-distance" class="text-lg font-bold">0.00</p>
+            </div>
+            <div class="flex-1 text-center">
+                <p class="text-xs text-secondary">Velocidad (km/h)</p>
+                <p id="stat-current-speed" class="text-lg font-bold">0.0</p>
+            </div>
         </div>
-        <div id="saved-routes-list" class="flex-grow overflow-y-auto mb-4"></div>
-        
-        <!-- Sección de Ajustes -->
-        <div class="border-t pt-4" style="border-color: var(--border-color);">
-            <h3 class="text-lg font-bold mb-3">Ajustes</h3>
-            <div class="space-y-4">
+        <div class="flex justify-center items-center gap-4 mt-4">
+            <button id="pause-resume-btn" class="btn-secondary text-2xl w-16 h-16 rounded-full shadow-lg flex items-center justify-center"><i class="ph-fill ph-pause"></i></button>
+            <button id="stop-btn" class="btn-stop text-2xl w-20 h-20 rounded-full shadow-lg flex items-center justify-center"><i class="ph-fill ph-stop"></i></button>
+            <div class="w-16 h-16"></div> <!-- Espaciador -->
+        </div>
+    </div>
+
+    <!-- Panel de detalles de la ruta (Visualizador) -->
+    <div id="route-details-panel" class="bottom-panel fixed bottom-0 left-0 right-0 p-4 z-10">
+        <div class="stat-pill p-4 flex flex-col gap-3 rounded-2xl backdrop-blur-md">
+            <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Tema</p>
-                    <div id="theme-selector" class="flex gap-2">
-                        <button data-theme="dark" class="theme-btn flex-1 py-2 rounded-lg text-sm">Oscuro</button>
-                        <button data-theme="light" class="theme-btn flex-1 py-2 rounded-lg text-sm">Claro</button>
-                    </div>
+                    <h3 id="details-route-name" class="text-xl font-bold">Nombre de la Ruta</h3>
+                    <p id="details-route-date" class="text-sm text-secondary">Fecha</p>
+                </div>
+                <button id="close-details-btn" class="p-2 rounded-full bg-light"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div>
+                    <p class="text-xs text-secondary">Distancia Total</p>
+                    <p id="details-route-distance" class="text-lg font-bold">0.00 km</p>
                 </div>
                 <div>
-                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Gestión de Rutas</p>
-                    <div class="flex gap-2">
-                        <button id="export-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm">Exportar</button>
-                        <button id="import-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm">Importar</button>
-                    </div>
+                    <p class="text-xs text-secondary">Duración</p>
+                    <p id="details-route-duration" class="text-lg font-bold">00:00:00</p>
                 </div>
-                <!-- **MODIFICADO**: Nueva sección para el modo offline -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones flotantes superiores -->
+    <div class="fixed top-5 right-5 z-10 flex flex-col gap-3">
+        <!-- BOTÓN PARA CENTRAR EL MAPA -->
+        <button id="recenter-btn" class="btn-secondary w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl"><i class="ph ph-crosshair"></i></button>
+        <button id="routes-btn" class="btn-secondary w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl"><i class="ph ph-list"></i></button>
+        <button id="settings-btn" class="btn-secondary w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl"><i class="ph ph-gear"></i></button>
+    </div>
+
+    <!-- Panel lateral de Rutas -->
+    <div id="routes-panel" class="side-panel fixed top-0 right-0 h-full w-full max-w-md z-30 transform translate-x-full">
+        <div class="flex flex-col h-full p-6 bg-secondary">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold">Mis Rutas</h2>
+                <button id="close-routes-btn" class="p-2 rounded-full bg-light"><i class="ph ph-x"></i></button>
+            </div>
+            <ul id="routes-list" class="flex-grow overflow-y-auto space-y-3"></ul>
+        </div>
+    </div>
+
+    <!-- Panel lateral de Ajustes -->
+    <div id="settings-panel" class="side-panel fixed top-0 right-0 h-full w-full max-w-md z-30 transform translate-x-full">
+        <div class="flex flex-col h-full p-6 bg-secondary">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold">Ajustes</h2>
+                <button id="close-settings-btn" class="p-2 rounded-full bg-light"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="space-y-6">
                 <div>
-                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Mapa Offline</p>
-                     <div class="flex gap-2">
-                        <button id="toggle-offline-mode-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm">Activar Modo Offline</button>
-                    </div>
-                    <p id="offline-mode-indicator" class="hidden text-xs text-center mt-2" style="color: var(--text-secondary);">
-                        Modo offline activado.
-                    </p>
+                    <label for="map-style-select" class="block mb-2 font-medium text-secondary">Estilo del Mapa</label>
+                    <select id="map-style-select" class="w-full border-2 border-transparent rounded-lg p-3 outline-none bg-light text-primary">
+                        <option value="dark">Oscuro</option>
+                        <option value="light">Claro</option>
+                    </select>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Modal para Guardar Ruta -->
-    <div id="save-modal" class="modal fixed inset-0 bg-black bg-opacity-60 z-40 flex items-center justify-center p-4">
-        <div class="rounded-2xl p-6 w-full max-w-sm shadow-xl" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+    <div id="save-modal" class="fixed inset-0 bg-black bg-opacity-60 z-40 items-center justify-center p-4 hidden">
+        <div class="rounded-2xl p-6 w-full max-w-sm shadow-xl bg-secondary border border-border">
             <h2 class="text-xl font-bold text-center mb-2">Guardar Ruta</h2>
-            <p class="text-center mb-4" style="color: var(--text-secondary);">Dale un nombre a tu aventura.</p>
-            <input type="text" id="route-name-input" class="w-full border-2 border-transparent rounded-lg p-3 mb-6 outline-none" style="background-color: var(--light-bg); color: var(--text-primary); --tw-ring-color: var(--brand-color);" placeholder="Ruta nocturna">
+            <p class="text-center mb-4 text-secondary">Dale un nombre a tu aventura.</p>
+            <input type="text" id="route-name-input" class="w-full border-2 border-transparent rounded-lg p-3 mb-6 outline-none bg-light text-primary focus:ring-2 focus:ring-brand" placeholder="Ruta nocturna">
             <div class="flex gap-4">
-                <button id="discard-btn" class="btn w-full font-bold py-3 px-4 rounded-lg" style="background-color: var(--light-bg); color: var(--text-primary);">Descartar</button>
-                <button id="save-route-btn" class="btn w-full font-bold py-3 px-4 rounded-lg" style="background-color: var(--brand-color); color: var(--bg-primary);">Guardar</button>
+                <button id="discard-btn" class="btn w-full font-bold py-3 px-4 rounded-lg bg-light text-primary">Descartar</button>
+                <button id="save-route-btn" class="btn w-full font-bold py-3 px-4 rounded-lg bg-brand text-bg-primary">Guardar</button>
             </div>
         </div>
     </div>
-
-    <!-- Input oculto para importar archivos -->
-    <input type="file" id="import-file-input" class="hidden" accept=".json">
-
-    <!-- Script principal como módulo -->
+    
+    <!-- Cargar el script como un módulo para permitir import/export -->
     <script type="module" src="myroute.js"></script>
 </body>
 </html>

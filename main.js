@@ -1,6 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+// Importar el gestor de datos centralizado
+import { getUnifiedData, saveUnifiedData } from './data-manager.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyB1mdncFubF9Nj7s64rslYtwUQmfQUhm3U",
@@ -17,62 +19,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-const dataManager = (() => {
-    const UNIFIED_STORAGE_KEY = 'mySoul-data-v1';
-    const MYMOOD_STORAGE_KEY = 'myMoodData_v5';
-    
-    function getDefaultUnifiedState() { 
-        return { 
-            myTime: { userName: null, tasks: [], wallpaper: null }, 
-            myMemory: { memories: [] },
-            myRoute: { routes: [] },
-            myMood: { entries: [] },
-            globalSettings: { onboardingComplete: false, externalApps: [], shortcuts: [] } 
-        }; 
-    }
-    function getUnifiedData() { 
-        const data = localStorage.getItem(UNIFIED_STORAGE_KEY); 
-        const moodData = localStorage.getItem(MYMOOD_STORAGE_KEY);
-        let parsedData = {};
-        if (data) {
-            try {
-                parsedData = JSON.parse(data);
-            } catch (error) {
-                console.error("Error parsing main data:", error);
-                parsedData = {};
-            }
-        }
-        
-        const defaultState = getDefaultUnifiedState();
-        const unified = {
-            ...defaultState,
-            ...parsedData,
-            myTime: { ...defaultState.myTime, ...(parsedData.myTime || {}) },
-            myMemory: { ...defaultState.myMemory, ...(parsedData.myMemory || {}) },
-            myRoute: { ...defaultState.myRoute, ...(parsedData.myRoute || {}) },
-            globalSettings: { ...defaultState.globalSettings, ...(parsedData.globalSettings || {}) },
-        };
-
-        try {
-            unified.myMood = moodData ? JSON.parse(moodData) : [];
-        } catch(e) {
-            console.error("Error parsing MyMood data:", e);
-            unified.myMood = [];
-        }
-
-        return unified;
-    }
-    function saveUnifiedData(data) { 
-        try { 
-            const { myMood, ...mainData } = data;
-            localStorage.setItem(UNIFIED_STORAGE_KEY, JSON.stringify(mainData));
-            localStorage.setItem(MYMOOD_STORAGE_KEY, JSON.stringify(myMood || []));
-        } catch (error) { 
-            console.error("Error saving unified data:", error); 
-        } 
-    }
-    return { get: getUnifiedData, save: saveUnifiedData };
-})();
+// El dataManager local ha sido eliminado. Ahora usamos las funciones importadas.
 
 document.addEventListener('DOMContentLoaded', () => {
     const onboardingContainer = document.getElementById('onboarding-container');
@@ -95,13 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            const dataToSave = dataManager.get();
+            // Obtener datos del gestor central
+            const dataToSave = getUnifiedData();
+            // Crear una copia profunda para no modificar el objeto en memoria
             const sanitizedData = JSON.parse(JSON.stringify(dataToSave));
 
-            if (sanitizedData.myRoute && sanitizedData.myRoute.routes) {
+            // Manejar correctamente el array 'coords' de myRoute para Firestore
+            if (sanitizedData.myRoute && Array.isArray(sanitizedData.myRoute.routes)) {
                 sanitizedData.myRoute.routes.forEach(route => {
-                    if (Array.isArray(route.path)) {
-                        route.path = JSON.stringify(route.path);
+                    // Convertir el array 'coords' a un string JSON
+                    if (Array.isArray(route.coords)) {
+                        route.coords = JSON.stringify(route.coords);
                     }
                 });
             }
@@ -127,21 +78,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (docSnap.exists()) {
                 const cloudData = docSnap.data();
 
-                if (cloudData.myRoute && cloudData.myRoute.routes) {
+                // Manejar correctamente el string 'coords' desde Firestore
+                if (cloudData.myRoute && Array.isArray(cloudData.myRoute.routes)) {
                     cloudData.myRoute.routes.forEach(route => {
-                        if (typeof route.path === 'string') {
+                        if (typeof route.coords === 'string') {
                             try {
-                                route.path = JSON.parse(route.path);
+                                // Convertir el string JSON de vuelta a un array
+                                route.coords = JSON.parse(route.coords);
                             } catch(e) {
-                                console.error("Failed to parse route path:", e);
-                                route.path = [];
+                                console.error("Failed to parse route coords:", e);
+                                route.coords = []; // Fallback a un array vacío en caso de error
                             }
                         }
                     });
                 }
 
                 showModalConfirm("¿Restaurar la copia de la nube? Se sobreescribirán tus datos locales.", () => {
-                    dataManager.save(cloudData);
+                    // Guardar los datos procesados usando el gestor central
+                    saveUnifiedData(cloudData);
                     showModalAlert("Datos restaurados. La aplicación se recargará.", "Éxito");
                     setTimeout(() => window.location.reload(), 1500);
                 });
@@ -154,14 +108,75 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function exportData() { const dataStr = JSON.stringify(dataManager.get(), null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'mysoul_backup.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showModalAlert('Datos locales exportados con éxito.'); }
-    function importData() { const importFileInput = document.getElementById('import-file-input'); importFileInput.click(); importFileInput.onchange = (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedData = JSON.parse(e.target.result); showModalConfirm('¿Estás seguro de que quieres sobreescribir tus datos locales?', () => { dataManager.save(importedData); showModalAlert('Datos importados con éxito. La página se recargará.'); setTimeout(() => window.location.reload(), 2000); }); } catch (error) { showModalAlert('Error al importar el archivo.'); } }; reader.readAsText(file); event.target.value = ''; }; }
+    function exportData() { 
+        const dataStr = JSON.stringify(getUnifiedData(), null, 2); 
+        const blob = new Blob([dataStr], { type: 'application/json' }); 
+        const url = URL.createObjectURL(blob); 
+        const a = document.createElement('a'); 
+        a.href = url; a.download = 'mysoul_backup.json'; 
+        document.body.appendChild(a); a.click(); 
+        document.body.removeChild(a); 
+        URL.revokeObjectURL(url); 
+        showModalAlert('Datos locales exportados con éxito.'); 
+    }
+    
+    function importData() { 
+        const importFileInput = document.getElementById('import-file-input'); 
+        importFileInput.click(); 
+        importFileInput.onchange = (event) => { 
+            const file = event.target.files[0]; 
+            if (!file) return; 
+            const reader = new FileReader(); 
+            reader.onload = (e) => { 
+                try { 
+                    const importedData = JSON.parse(e.target.result); 
+                    showModalConfirm('¿Estás seguro de que quieres sobreescribir tus datos locales?', () => { 
+                        saveUnifiedData(importedData); 
+                        showModalAlert('Datos importados con éxito. La página se recargará.'); 
+                        setTimeout(() => window.location.reload(), 2000); 
+                    }); 
+                } catch (error) { 
+                    showModalAlert('Error al importar el archivo.'); 
+                } 
+            }; 
+            reader.readAsText(file); 
+            event.target.value = ''; 
+        }; 
+    }
     
     const wallpaperInput = document.getElementById('wallpaper-input');
     const wallpaperDiv = document.getElementById('background-wallpaper');
 
     function applyWallpaper(base64String) { if (base64String) { wallpaperDiv.style.backgroundImage = `url(${base64String})`; } }
-    function compressAndEncodeImage(file) { const maxDim = 1920; const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; } } else { if (height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); const base64String = canvas.toDataURL('image/jpeg', 0.7); const unifiedData = dataManager.get(); unifiedData.myTime.wallpaper = base64String; dataManager.save(unifiedData); applyWallpaper(base64String); showModalAlert('Fondo de pantalla actualizado.'); }; img.src = e.target.result; }; reader.readAsDataURL(file); }
+    
+    function compressAndEncodeImage(file) { 
+        const maxDim = 1920; 
+        const reader = new FileReader(); 
+        reader.onload = (e) => { 
+            const img = new Image(); 
+            img.onload = () => { 
+                const canvas = document.createElement('canvas'); 
+                let { width, height } = img; 
+                if (width > height) { 
+                    if (width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; } 
+                } else { 
+                    if (height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; } 
+                } 
+                canvas.width = width; canvas.height = height; 
+                const ctx = canvas.getContext('2d'); 
+                ctx.drawImage(img, 0, 0, width, height); 
+                const base64String = canvas.toDataURL('image/jpeg', 0.7); 
+                const unifiedData = getUnifiedData(); 
+                unifiedData.myTime.wallpaper = base64String; 
+                saveUnifiedData(unifiedData); 
+                applyWallpaper(base64String); 
+                showModalAlert('Fondo de pantalla actualizado.'); 
+            }; 
+            img.src = e.target.result; 
+        }; 
+        reader.readAsDataURL(file); 
+    }
+    
     wallpaperInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file && file.type.startsWith('image/')) { compressAndEncodeImage(file); } });
 
     function showSettingsModal() {
@@ -237,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showAppModal(appIndex = null) {
         const isEditing = appIndex !== null;
-        const unifiedData = dataManager.get();
+        const unifiedData = getUnifiedData();
         const app = isEditing ? unifiedData.globalSettings.externalApps[appIndex] : null;
 
         modalTitle.textContent = isEditing ? "Editar App" : "Añadir Nueva App";
@@ -262,14 +277,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (title && description && link) {
                 try {
                     new URL(link);
-                    const currentData = dataManager.get();
+                    const currentData = getUnifiedData();
                     const newApp = { title, description, href: link };
                     if (isEditing) {
                         currentData.globalSettings.externalApps[appIndex] = newApp;
                     } else {
                         currentData.globalSettings.externalApps.push(newApp);
                     }
-                    dataManager.save(currentData);
+                    saveUnifiedData(currentData);
                     initializeCarousel();
                     close();
                     showModalAlert(`¡App ${isEditing ? 'actualizada' : 'añadida'} con éxito!`);
@@ -284,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function showShortcutModal(shortcutIndex = null) {
         const isEditing = shortcutIndex !== null;
-        const unifiedData = dataManager.get();
+        const unifiedData = getUnifiedData();
         const shortcut = isEditing ? unifiedData.globalSettings.shortcuts[shortcutIndex] : null;
 
         modalTitle.textContent = isEditing ? "Editar Acceso Directo" : "Nuevo Acceso Directo";
@@ -352,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (newShortcut) {
-                const currentData = dataManager.get();
+                const currentData = getUnifiedData();
                 if (!currentData.globalSettings.shortcuts) currentData.globalSettings.shortcuts = [];
                 
                 if (isEditing) {
@@ -360,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     currentData.globalSettings.shortcuts.push(newShortcut);
                 }
-                dataManager.save(currentData);
+                saveUnifiedData(currentData);
                 renderShortcuts();
                 close();
                 showModalAlert(`¡Acceso directo ${isEditing ? 'actualizado' : 'añadido'}!`);
@@ -373,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initializeApp() {
-        const unifiedData = dataManager.get();
+        const unifiedData = getUnifiedData();
         if (unifiedData.myTime?.wallpaper) { applyWallpaper(unifiedData.myTime.wallpaper); }
         if (unifiedData.globalSettings.onboardingComplete) {
             onboardingContainer.style.display = 'none';
@@ -397,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     onAuthStateChanged(auth, (user) => {
-        const unifiedData = dataManager.get();
+        const unifiedData = getUnifiedData();
         const userPhoto = document.getElementById('user-photo');
         const headerUsername = document.getElementById('header-username');
         if (user) {
@@ -413,11 +428,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function showStep(stepNumber) { document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active')); const step = document.getElementById(`onboarding-step-${stepNumber}`); if(step) { step.classList.add('active'); } }
-    function finishOnboarding() { const transitionOverlay = document.getElementById('transition-overlay'); transitionOverlay.classList.add('expand'); setTimeout(() => { onboardingContainer.style.display = 'none'; mainOsContainer.style.display = 'block'; mainOsContainer.classList.add('active'); const unifiedData = dataManager.get(); unifiedData.globalSettings.onboardingComplete = true; dataManager.save(unifiedData); initializeApp(); }, 400); setTimeout(() => { transitionOverlay.style.display = 'none'; }, 1200); }
+    function finishOnboarding() { const transitionOverlay = document.getElementById('transition-overlay'); transitionOverlay.classList.add('expand'); setTimeout(() => { onboardingContainer.style.display = 'none'; mainOsContainer.style.display = 'block'; mainOsContainer.classList.add('active'); const unifiedData = getUnifiedData(); unifiedData.globalSettings.onboardingComplete = true; saveUnifiedData(unifiedData); initializeApp(); }, 400); setTimeout(() => { transitionOverlay.style.display = 'none'; }, 1200); }
     
     document.getElementById('google-onboarding-btn')?.addEventListener('click', signInWithGoogle);
     document.getElementById('local-continue-btn')?.addEventListener('click', () => showStep(2));
-    document.getElementById('confirm-name-btn')?.addEventListener('click', () => { const usernameInput = document.getElementById('username-input'); const username = usernameInput.value.trim(); if (username) { const unifiedData = dataManager.get(); if (!unifiedData.myTime) unifiedData.myTime = {}; unifiedData.myTime.userName = username; dataManager.save(unifiedData); document.getElementById('commitment-username').textContent = username; document.getElementById('header-username').textContent = username; showStep(3); } else { showModalAlert('Por favor, introduce un nombre.'); } });
+    document.getElementById('confirm-name-btn')?.addEventListener('click', () => { const usernameInput = document.getElementById('username-input'); const username = usernameInput.value.trim(); if (username) { const unifiedData = getUnifiedData(); if (!unifiedData.myTime) unifiedData.myTime = {}; unifiedData.myTime.userName = username; saveUnifiedData(unifiedData); document.getElementById('commitment-username').textContent = username; document.getElementById('header-username').textContent = username; showStep(3); } else { showModalAlert('Por favor, introduce un nombre.'); } });
     const fingerprintButton = document.getElementById('fingerprint-button');
     if(fingerprintButton) { let holdTimeout; const startHold = (e) => { e.preventDefault(); fingerprintButton.classList.add('holding'); holdTimeout = setTimeout(finishOnboarding, 2000); }; const endHold = () => { fingerprintButton.classList.remove('holding'); clearTimeout(holdTimeout); }; fingerprintButton.addEventListener('mousedown', startHold); fingerprintButton.addEventListener('mouseup', endHold); fingerprintButton.addEventListener('mouseleave', endHold); fingerprintButton.addEventListener('touchstart', startHold, { passive: true }); fingerprintButton.addEventListener('touchend', endHold); }
     
@@ -425,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const track = document.getElementById('app-carousel-track');
         if (!track) return;
         
-        const unifiedData = dataManager.get();
+        const unifiedData = getUnifiedData();
         const internalApps = [
             { title: 'MyTasks', description: 'Gestión de tareas y enfoque para maximizar tu productividad.', href: 'mytime.html', status: '[ SYSTEM ONLINE ]' },
             { title: 'MyRoute', description: 'Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.', href: 'myroute.html', status: '[ SYSTEM ONLINE ]' },
@@ -522,9 +537,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 const index = parseInt(e.currentTarget.dataset.index);
                 showModalConfirm("¿Seguro que quieres eliminar esta app?", () => {
-                    const currentData = dataManager.get();
+                    const currentData = getUnifiedData();
                     currentData.globalSettings.externalApps.splice(index, 1);
-                    dataManager.save(currentData);
+                    saveUnifiedData(currentData);
                     initializeCarousel();
                 });
             });
@@ -627,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderNotes() {
         const notesGrid = document.getElementById('notes-grid');
         if (!notesGrid) return;
-        const data = dataManager.get();
+        const data = getUnifiedData();
 
         const allNotes = (data.myMemory?.memories || [])
             .flatMap(memory => memory.items || [])
@@ -653,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTodos() {
         const todosGrid = document.getElementById('todos-grid');
         if (!todosGrid) return;
-        const data = dataManager.get();
+        const data = getUnifiedData();
         const pendingTodos = (data.myTime?.tasks || []).filter(task => task && !task.completed).sort((a,b) => (a.dueDate && b.dueDate) ? new Date(a.dueDate) - new Date(b.dueDate) : a.dueDate ? -1 : 1).slice(0, 4);
         let contentHTML = '';
         if (pendingTodos.length > 0) {
@@ -672,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const shortcutsGrid = document.getElementById('shortcuts-grid');
         if (!shortcutsGrid) return;
 
-        const data = dataManager.get();
+        const data = getUnifiedData();
         const shortcuts = data.globalSettings?.shortcuts || [];
 
         const shortcutsHTML = shortcuts.map((shortcut, index) => {
@@ -727,9 +742,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 const index = parseInt(e.currentTarget.dataset.index);
                 showModalConfirm("¿Seguro que quieres eliminar este acceso directo?", () => {
-                    const currentData = dataManager.get();
+                    const currentData = getUnifiedData();
                     currentData.globalSettings.shortcuts.splice(index, 1);
-                    dataManager.save(currentData);
+                    saveUnifiedData(currentData);
                     renderShortcuts();
                 });
             });

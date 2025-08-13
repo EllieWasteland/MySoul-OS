@@ -1,141 +1,104 @@
-/* --- Definiciones de Temas --- */
+/* --- Definiciones de Temas y Variables --- */
 :root, body.theme-dark {
     --brand-color: #ffffff; 
+    --brand-text: #000000;
     --bg-primary: #000000;
     --bg-secondary: #171717;
     --text-primary: #ffffff;
     --text-secondary: #a3a3a3;
     --border-color: #262626;
-    --light-bg: #1f2937;
-    --glass-bg: rgba(23, 23, 23, 0.7); /* #171717 con transparencia */
+    --light-bg: #27272a;
+    --glass-bg: rgba(23, 23, 23, 0.7);
     --glass-border: rgba(255, 255, 255, 0.1);
-    --pill-bg: rgba(255, 255, 255, 0.05);
 }
 body.theme-light {
-    --brand-color: #000000; 
-    --bg-primary: #f5f5f5;
+    --brand-color: #000000;
+    --brand-text: #ffffff;
+    --bg-primary: #f4f4f5;
     --bg-secondary: #ffffff;
     --text-primary: #171717;
     --text-secondary: #737373;
-    --border-color: #e5e5e5;
-    --light-bg: #e5e5e5;
+    --border-color: #e4e4e7;
+    --light-bg: #e4e4e7;
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(0, 0, 0, 0.1);
-    --pill-bg: rgba(0, 0, 0, 0.05);
 }
 
 /* --- Estilos Base --- */
 body { 
-    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
     background-color: var(--bg-primary); 
     color: var(--text-primary);
     transition: background-color 0.3s, color 0.3s;
 }
+
 #map {
     height: 100%;
     width: 100%;
 }
+
+/* Filtro para el mapa en tema oscuro */
+body.theme-dark #map {
+    filter: invert(1) hue-rotate(180deg);
+}
+
 .maplibregl-ctrl-logo, .maplibregl-ctrl-attrib { 
     display: none !important; 
 }
 
-/* **MODIFICADO**: Nuevo marcador de usuario con SVG */
-.user-location-marker {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s linear; /* Suaviza la rotación */
-}
-.user-location-marker svg {
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-}
-
-
-.btn {
-    transition: all 0.2s ease-in-out;
-}
-.btn:hover {
-    transform: scale(1.05);
+/* --- Componentes de UI reutilizables --- */
+.text-secondary { color: var(--text-secondary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-light { background-color: var(--light-bg); }
+.text-primary { color: var(--text-primary); }
+.border-border { border-color: var(--border-color); }
+.border-glass { border-color: var(--glass-border); }
+.bg-brand { background-color: var(--brand-color); }
+.text-bg-primary { color: var(--bg-primary); }
+.focus\:ring-brand:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: var(--brand-color) !important;
 }
 
-/* --- Estilos de Efecto "Glass" --- */
-.glass-effect, .glass-effect-button, .clock-glass {
-    background-color: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    color: var(--text-primary);
+/* --- Botones --- */
+.btn-primary, .btn-secondary, .btn-stop {
+    transition: transform 0.2s ease;
 }
-
-/* --- Estilos del Panel de Estadísticas --- */
-#recording-stats-panel {
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    opacity: 0;
-    transform: translateY(20px);
+.btn-primary {
+    background-color: var(--brand-color);
+    color: var(--brand-text);
 }
-#recording-stats-panel.hidden {
-    opacity: 0;
-    transform: translateY(100%);
-    pointer-events: none;
-}
-#recording-stats-panel:not(.hidden) {
-    opacity: 1;
-    transform: translateY(0);
-}
-.stat-pill, .stat-square {
-    background-color: var(--pill-bg);
-    border-radius: 1rem; /* rounded-xl */
-    padding: 0.5rem;
-}
-.stat-square {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-}
-#altimetry-canvas {
-    width: 100%;
-    height: 100%;
-}
-
-/* --- Estilos de Animación y Transición --- */
-.modal {
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-    transform: scale(0.95);
-    opacity: 0;
-    visibility: hidden;
-}
-.modal.active {
-    transform: scale(1);
-    opacity: 1;
-    visibility: visible;
-}
-.side-panel {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.side-panel.hidden {
-    transform: translateX(100%);
-}
-.fade-in {
-    animation: fadeIn 0.3s ease forwards;
-}
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- Estilos de Botones de Tema --- */
-.theme-btn {
+.btn-secondary {
     background-color: var(--light-bg);
     color: var(--text-primary);
 }
-.theme-btn.active {
-    border: 2px solid var(--brand-color);
-    font-weight: bold;
+.btn-stop {
+    background-color: #ef4444; /* Rojo */
+    color: white;
+}
+.btn-primary:hover, .btn-secondary:hover, .btn-stop:hover {
+    transform: scale(1.05);
+}
+
+/* --- Paneles --- */
+.side-panel {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-panel {
+    transform: translateY(120%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg-primary) 40%);
+    pointer-events: none; /* No interactuable cuando está oculto */
+}
+.bottom-panel.active {
+    transform: translateY(0);
+    pointer-events: auto; /* Interactuable cuando está visible */
+}
+
+.stat-pill {
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
