@@ -1,8 +1,7 @@
-// Importamos las funciones del data-manager centralizado
-import { getUnifiedData, saveUnifiedData } from './data-manager.js';
-
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONSTANTS AND CONFIGURATION ---
+    const MYMOOD_STORAGE_KEY = 'myMoodData_v5';
+    const MYSOL_OS_STORAGE_KEY = 'mySoul-data-v1'; // Key for the main OS data
     const MOODS = [
         { id: 'happy',      label: 'Feliz',      icon: '😄', value: 5, color: '#ffc700' },
         { id: 'calm',       label: 'Calmado',    icon: '😌', value: 4, color: '#5de2ff' },
@@ -50,25 +49,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let calendarDate = new Date();
     let moodChart;
 
-    // --- DATA MANAGEMENT FUNCTIONS (INTEGRATED) ---
-    const loadMoodData = () => {
-        const unifiedData = getUnifiedData();
-        moodEntries = unifiedData.myMood.entries || [];
+    // --- DATA MANAGEMENT FUNCTIONS ---
+    const loadData = () => {
+        const storedData = localStorage.getItem(MYMOOD_STORAGE_KEY);
+        moodEntries = storedData ? JSON.parse(storedData) : [];
     };
 
-    const saveMoodData = () => {
-        const unifiedData = getUnifiedData();
-        unifiedData.myMood.entries = moodEntries;
-        saveUnifiedData(unifiedData);
+    const saveData = () => {
+        localStorage.setItem(MYMOOD_STORAGE_KEY, JSON.stringify(moodEntries));
     };
 
     // --- UI AND RENDERING FUNCTIONS ---
     const applyWallpaper = () => {
         try {
-            const osData = getUnifiedData(); // Leemos del estado unificado
-            const wallpaper = osData?.myTime?.wallpaper;
-            if (wallpaper) {
-                appBackground.style.backgroundImage = `url(${wallpaper})`;
+            const osDataStr = localStorage.getItem(MYSOL_OS_STORAGE_KEY);
+            if (osDataStr) {
+                const osData = JSON.parse(osDataStr);
+                const wallpaper = osData?.myTime?.wallpaper;
+                if (wallpaper) {
+                    appBackground.style.backgroundImage = `url(${wallpaper})`;
+                }
             }
         } catch (error) {
             console.error("Error loading MySoul OS wallpaper:", error);
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const chartData = last7Days.map(day => {
             const entriesOnDay = moodEntries.filter(e => e.timestamp.startsWith(day));
-            if (entriesOnDay.length === 0) return null;
+            if (entriesOnDay.length === 0) return null; // Use null for days with no data
             const totalValue = entriesOnDay.reduce((sum, entry) => {
                 const mood = MOODS.find(m => m.id === entry.moodId);
                 return sum + (mood ? mood.value : 0);
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: 2,
                     tension: 0.4,
                     fill: true,
-                    spanGaps: true,
+                    spanGaps: true, // Connect lines over null data points
                 }]
             },
             options: {
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timestamp: new Date().toISOString(),
         };
         moodEntries.push(newEntry);
-        saveMoodData(); // Usamos la nueva función para guardar
+        saveData();
         
         selectedMoodId = null;
         moodNotes.value = '';
@@ -344,9 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     const init = () => {
-        loadMoodData(); // Usamos la nueva función para cargar
         applyWallpaper();
         motivationalQuote.textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+        loadData();
         renderMoodSelector();
         
         dockButtons.forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
