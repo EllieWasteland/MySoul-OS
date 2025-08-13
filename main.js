@@ -754,4 +754,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initializeApp();
+    
+    // FIX: Reset card state on page show (e.g., when using browser back button)
+    window.addEventListener('pageshow', (event) => {
+        const exitingCards = document.querySelectorAll('.app-card.exiting');
+        exitingCards.forEach(card => {
+            card.classList.remove('exiting');
+        });
+    });
 });
