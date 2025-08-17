@@ -105,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const li = document.createElement('li');
                 li.className = 'route-item flex items-center justify-between p-4 rounded-lg bg-light';
                 li.dataset.routeId = route.id;
-                // **CORRECCIÓN: Se añade min-w-0 para que la clase truncate funcione correctamente en un contenedor flex**
                 li.innerHTML = `
                     <div class="flex-grow cursor-pointer view-route-btn min-w-0">
                         <p class="font-bold truncate">${route.name}</p>
@@ -263,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!appState.lastKnownPosition) return ui.showStatus('Espera a tener una señal de GPS estable.', 2000);
             appState.isRecording = true;
             appState.isPaused = false;
-            appState.isDynamicCameraActive = true;
             appState.startTime = Date.now();
             appState.totalPausedTime = 0;
             const { longitude, latitude } = appState.lastKnownPosition.coords;
@@ -271,7 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showPanel(DOMElements.recordingStatsPanel, true);
             mapLogic.clearRouteLine('viewing');
             appState.timerId = setInterval(ui.updateRecordingStats, 1000);
-            mapLogic.updateDynamicCamera();
+            
+            // --- CORRECCIÓN 1: Centrar el mapa al iniciar la grabación ---
+            // Se llama a la función recenterMap() que ya contiene la lógica correcta 
+            // para activar y posicionar la cámara dinámica.
+            mapLogic.recenterMap();
         },
         pause: () => {
             appState.isPaused = true;
@@ -354,6 +356,62 @@ document.addEventListener('DOMContentLoaded', () => {
         mapValue: (value, in_min, in_max, out_min, out_max) => (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min,
         clamp: (value, min, max) => Math.max(min, Math.min(value, max)),
     };
+    
+    // --- CORRECCIÓN 2: Estilos para modo horizontal ---
+    // Esta función inyecta CSS en la página para hacer el panel de grabación
+    // más compacto en pantallas apaisadas (modo horizontal).
+    const applyResponsiveStyles = () => {
+        const styleId = 'myroute-responsive-styles';
+        if (document.getElementById(styleId)) return; // Asegura que solo se añada una vez
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+            @media (orientation: landscape) and (max-height: 500px) {
+                #recording-stats-panel.bottom-panel {
+                    /* Cambia el layout a una sola fila horizontal */
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 0.75rem; /* 12px */
+                    padding: 0.5rem; /* 8px */
+                    /* Elimina el fondo con gradiente para un look más limpio */
+                    background: var(--bg-primary); 
+                }
+
+                #recording-stats-panel .stat-pill {
+                    /* Permite que las estadísticas ocupen el espacio disponible */
+                    flex-grow: 1;
+                }
+
+                #recording-stats-panel .flex.justify-center {
+                    /* Elimina el margen superior y lo convierte en un item flexible */
+                    margin-top: 0;
+                    flex-shrink: 0; /* Evita que los botones se encojan */
+                }
+
+                /* Reduce el tamaño de los botones */
+                #pause-resume-btn {
+                    width: 3rem; /* w-12 */
+                    height: 3rem; /* h-12 */
+                    font-size: 1.25rem; /* text-xl */
+                }
+                #stop-btn {
+                    width: 3.5rem; /* w-14 */
+                    height: 3.5rem; /* h-14 */
+                    font-size: 1.25rem; /* text-xl */
+                }
+                
+                /* Oculta el div espaciador junto a los botones */
+                #recording-stats-panel .flex.justify-center > .w-16 {
+                    display: none;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
 
     // --- Vinculación de Eventos ---
     const bindEvents = () => {
@@ -384,7 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.toggleSidePanel(DOMElements.routesPanel, false);
             }
             if (deleteBtn) {
-                // **CORRECCIÓN: Se activa la funcionalidad de borrado**
                 recording.delete(deleteBtn.dataset.id);
             }
         });
@@ -394,6 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Inicialización ---
     const init = async () => {
+        applyResponsiveStyles(); // Se llama a la función para aplicar estilos responsivos
         ui.initialize();
         await mapLogic.initialize();
         bindEvents();
