@@ -51,6 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
         route: { coords: [] },
         watchId: null,
         timerId: null,
+        // --- INICIO DE LA MODIFICACIÓN ---
+        recenterIntervalId: null, // ID para el intervalo de centrado automático
+        // --- FIN DE LA MODIFICACIÓN ---
         startTime: 0,
         pausedTime: 0,
         totalPausedTime: 0,
@@ -242,6 +245,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.showStatus('Aún no se ha encontrado la ubicación', 2000);
             }
         },
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Nueva función para recentrar el mapa sin mostrar notificación,
+        // usada por el intervalo automático.
+        silentRecenter: () => {
+            if (appState.lastKnownPosition) {
+                appState.isDynamicCameraActive = true;
+                mapLogic.updateDynamicCamera();
+            }
+        },
+        // --- FIN DE LA MODIFICACIÓN ---
         updateRouteLine: (coords, type) => {
             const source = appState.map.getSource(`${type}-source`);
             if (source) source.setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: coords } });
@@ -270,10 +283,19 @@ document.addEventListener('DOMContentLoaded', () => {
             mapLogic.clearRouteLine('viewing');
             appState.timerId = setInterval(ui.updateRecordingStats, 1000);
             
-            // --- CORRECCIÓN 1: Centrar el mapa al iniciar la grabación ---
-            // Se llama a la función recenterMap() que ya contiene la lógica correcta 
-            // para activar y posicionar la cámara dinámica.
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Centra el mapa una vez al iniciar (con notificación)
             mapLogic.recenterMap();
+
+            // Inicia el intervalo para el centrado automático y silencioso cada 2 segundos
+            if (appState.recenterIntervalId) clearInterval(appState.recenterIntervalId);
+            appState.recenterIntervalId = setInterval(() => {
+                // Solo se ejecuta si la grabación no está en pausa
+                if (!appState.isPaused) {
+                    mapLogic.silentRecenter();
+                }
+            }, 2000);
+            // --- FIN DE LA MODIFICACIÓN ---
         },
         pause: () => {
             appState.isPaused = true;
@@ -286,6 +308,13 @@ document.addEventListener('DOMContentLoaded', () => {
             DOMElements.pauseResumeBtn.innerHTML = '<i class="ph-fill ph-pause"></i>';
         },
         stop: () => {
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Detiene el intervalo de centrado automático
+            if (appState.recenterIntervalId) {
+                clearInterval(appState.recenterIntervalId);
+                appState.recenterIntervalId = null;
+            }
+            // --- FIN DE LA MODIFICACIÓN ---
             clearInterval(appState.timerId);
             appState.isDynamicCameraActive = false;
             appState.map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
@@ -315,6 +344,13 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         discard: () => recording.reset(),
         reset: () => {
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Detiene el intervalo de centrado automático al resetear
+            if (appState.recenterIntervalId) {
+                clearInterval(appState.recenterIntervalId);
+                appState.recenterIntervalId = null;
+            }
+            // --- FIN DE LA MODIFICACIÓN ---
             appState.isRecording = false;
             appState.isPaused = false;
             appState.isDynamicCameraActive = false;
