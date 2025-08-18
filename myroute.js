@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
         detailsRouteDuration: getEl('details-route-duration'),
         closeDetailsBtn: getEl('close-details-btn'),
         recenterBtn: getEl('recenter-btn'),
+        // --- INICIO DE LA MODIFICACIÓN ---
+        preloadMapBtn: getEl('preload-map-btn'), // Nuevo botón en Ajustes
+        preloadOverlay: getEl('preload-overlay'), // Nuevo overlay de carga
+        // --- FIN DE LA MODIFICACIÓN ---
     };
 
     // --- Estado Global de la Aplicación ---
@@ -45,15 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
         isRecording: false,
         isPaused: false,
         isDynamicCameraActive: false,
+        isPreloading: false, // Nuevo estado para saber si se está pre-cargando
         map: null,
         userMarker: null,
         lastKnownPosition: null,
         route: { coords: [] },
         watchId: null,
         timerId: null,
-        // --- INICIO DE LA MODIFICACIÓN ---
-        recenterIntervalId: null, // ID para el intervalo de centrado automático
-        // --- FIN DE LA MODIFICACIÓN ---
+        recenterIntervalId: null,
         startTime: 0,
         pausedTime: 0,
         totalPausedTime: 0,
@@ -94,6 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.toggle('hidden', !show);
             modal.classList.toggle('flex', show);
         },
+        // --- INICIO DE LA MODIFICACIÓN ---
+        togglePreloadOverlay: (show) => {
+            if (DOMElements.preloadOverlay) {
+                DOMElements.preloadOverlay.classList.toggle('hidden', !show);
+            }
+        },
+        // --- FIN DE LA MODIFICACIÓN ---
         updateRecordingStats: () => {
             const now = appState.isPaused ? appState.pausedTime : Date.now();
             const elapsedTime = now - appState.startTime - appState.totalPausedTime;
@@ -162,8 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ui.applyTheme(getUnifiedData().myRoute.settings.mapStyle);
                 });
 
-                appState.map.on('dragstart', () => { if(appState.isDynamicCameraActive) ui.showStatus('Control manual activado', 1500); appState.isDynamicCameraActive = false; });
-                appState.map.on('zoomstart', () => { if(appState.isDynamicCameraActive) ui.showStatus('Control manual activado', 1500); appState.isDynamicCameraActive = false; });
+                appState.map.on('dragstart', () => { if(appState.isDynamicCameraActive && !appState.isPreloading) ui.showStatus('Control manual activado', 1500); appState.isDynamicCameraActive = false; });
+                appState.map.on('zoomstart', () => { if(appState.isDynamicCameraActive && !appState.isPreloading) ui.showStatus('Control manual activado', 1500); appState.isDynamicCameraActive = false; });
 
             } catch (error) {
                 console.error("Error crítico al inicializar el mapa:", error);
@@ -245,14 +255,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.showStatus('Aún no se ha encontrado la ubicación', 2000);
             }
         },
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Nueva función para recentrar el mapa sin mostrar notificación,
-        // usada por el intervalo automático.
         silentRecenter: () => {
             if (appState.lastKnownPosition) {
                 appState.isDynamicCameraActive = true;
                 mapLogic.updateDynamicCamera();
             }
+        },
+        // --- INICIO DE LA MODIFICACIÓN: Nueva función de pre-cargado ---
+        preloadMapArea: async () => {
+            if (!appState.lastKnownPosition) {
+                return ui.showStatus('Espera a tener una señal de GPS estable.', 2000);
+            }
+            if (appState.isPreloading) return;
+
+            appState.isPreloading = true;
+            ui.togglePreloadOverlay(true);
+            ui.showStatus('Pre-cargando mapa...', 0);
+
+            const center = appState.lastKnownPosition.coords;
+            const zoom = 14; // Nivel de zoom fijo para el pre-cargado
+            const areaSizeKm = 30; // 30km x 30km
+            const steps = 6; // Cuadrícula de 6x6 para el barrido
+
+            const kmPerDegree = 111.32;
+            const latOffset = (areaSizeKm / 2) / kmPerDegree;
+            const lonOffset = (areaSizeKm / 2) / (kmPerDegree * Math.cos(center.latitude * Math.PI / 180));
+
+            const minLat = center.latitude - latOffset;
+            const maxLat = center.latitude + latOffset;
+            const minLon = center.longitude - lonOffset;
+            const maxLon = center.longitude + lonOffset;
+
+            const latStep = (maxLat - minLat) / (steps - 1);
+            const lonStep = (maxLon - minLon) / (steps - 1);
+
+            await appState.map.flyTo({ center: [center.longitude, center.latitude], zoom: zoom, duration: 1000 });
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            for (let i = 0; i < steps; i++) {
+                for (let j = 0; j < steps; j++) {
+                    const lat = minLat + i * latStep;
+                    const lon = minLon + j * lonStep;
+                    appState.map.panTo([lon, lat], { duration: 250 });
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                }
+            }
+            
+            await appState.map.flyTo({ center: [center.longitude, center.latitude], zoom: zoom, duration: 1000 });
+
+            ui.togglePreloadOverlay(false);
+            ui.showStatus('Mapa pre-cargado para la zona.', 3000);
+            appState.isPreloading = false;
         },
         // --- FIN DE LA MODIFICACIÓN ---
         updateRouteLine: (coords, type) => {
@@ -283,19 +336,14 @@ document.addEventListener('DOMContentLoaded', () => {
             mapLogic.clearRouteLine('viewing');
             appState.timerId = setInterval(ui.updateRecordingStats, 1000);
             
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Centra el mapa una vez al iniciar (con notificación)
             mapLogic.recenterMap();
 
-            // Inicia el intervalo para el centrado automático y silencioso cada 2 segundos
             if (appState.recenterIntervalId) clearInterval(appState.recenterIntervalId);
             appState.recenterIntervalId = setInterval(() => {
-                // Solo se ejecuta si la grabación no está en pausa
                 if (!appState.isPaused) {
                     mapLogic.silentRecenter();
                 }
             }, 2000);
-            // --- FIN DE LA MODIFICACIÓN ---
         },
         pause: () => {
             appState.isPaused = true;
@@ -308,13 +356,10 @@ document.addEventListener('DOMContentLoaded', () => {
             DOMElements.pauseResumeBtn.innerHTML = '<i class="ph-fill ph-pause"></i>';
         },
         stop: () => {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Detiene el intervalo de centrado automático
             if (appState.recenterIntervalId) {
                 clearInterval(appState.recenterIntervalId);
                 appState.recenterIntervalId = null;
             }
-            // --- FIN DE LA MODIFICACIÓN ---
             clearInterval(appState.timerId);
             appState.isDynamicCameraActive = false;
             appState.map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
@@ -344,13 +389,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         discard: () => recording.reset(),
         reset: () => {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Detiene el intervalo de centrado automático al resetear
             if (appState.recenterIntervalId) {
                 clearInterval(appState.recenterIntervalId);
                 appState.recenterIntervalId = null;
             }
-            // --- FIN DE LA MODIFICACIÓN ---
             appState.isRecording = false;
             appState.isPaused = false;
             appState.isDynamicCameraActive = false;
@@ -393,61 +435,32 @@ document.addEventListener('DOMContentLoaded', () => {
         clamp: (value, min, max) => Math.max(min, Math.min(value, max)),
     };
     
-    // --- CORRECCIÓN 2: Estilos para modo horizontal ---
-    // Esta función inyecta CSS en la página para hacer el panel de grabación
-    // más compacto en pantallas apaisadas (modo horizontal).
     const applyResponsiveStyles = () => {
         const styleId = 'myroute-responsive-styles';
-        if (document.getElementById(styleId)) return; // Asegura que solo se añada una vez
+        if (document.getElementById(styleId)) return;
 
         const style = document.createElement('style');
         style.id = styleId;
         style.innerHTML = `
             @media (orientation: landscape) and (max-height: 500px) {
                 #recording-stats-panel.bottom-panel {
-                    /* Cambia el layout a una sola fila horizontal */
                     display: flex;
                     flex-direction: row;
                     align-items: center;
                     justify-content: space-between;
-                    gap: 0.75rem; /* 12px */
-                    padding: 0.5rem; /* 8px */
-                    /* Elimina el fondo con gradiente para un look más limpio */
+                    gap: 0.75rem;
+                    padding: 0.5rem;
                     background: var(--bg-primary); 
                 }
-
-                #recording-stats-panel .stat-pill {
-                    /* Permite que las estadísticas ocupen el espacio disponible */
-                    flex-grow: 1;
-                }
-
-                #recording-stats-panel .flex.justify-center {
-                    /* Elimina el margen superior y lo convierte en un item flexible */
-                    margin-top: 0;
-                    flex-shrink: 0; /* Evita que los botones se encojan */
-                }
-
-                /* Reduce el tamaño de los botones */
-                #pause-resume-btn {
-                    width: 3rem; /* w-12 */
-                    height: 3rem; /* h-12 */
-                    font-size: 1.25rem; /* text-xl */
-                }
-                #stop-btn {
-                    width: 3.5rem; /* w-14 */
-                    height: 3.5rem; /* h-14 */
-                    font-size: 1.25rem; /* text-xl */
-                }
-                
-                /* Oculta el div espaciador junto a los botones */
-                #recording-stats-panel .flex.justify-center > .w-16 {
-                    display: none;
-                }
+                #recording-stats-panel .stat-pill { flex-grow: 1; }
+                #recording-stats-panel .flex.justify-center { margin-top: 0; flex-shrink: 0; }
+                #pause-resume-btn { width: 3rem; height: 3rem; font-size: 1.25rem; }
+                #stop-btn { width: 3.5rem; height: 3.5rem; font-size: 1.25rem; }
+                #recording-stats-panel .flex.justify-center > .w-16 { display: none; }
             }
         `;
         document.head.appendChild(style);
     };
-
 
     // --- Vinculación de Eventos ---
     const bindEvents = () => {
@@ -483,11 +496,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         DOMElements.closeDetailsBtn.onclick = ui.hideRouteDetails;
         DOMElements.recenterBtn.onclick = mapLogic.recenterMap;
+        // --- INICIO DE LA MODIFICACIÓN ---
+        if (DOMElements.preloadMapBtn) {
+            DOMElements.preloadMapBtn.onclick = mapLogic.preloadMapArea;
+        }
+        // --- FIN DE LA MODIFICACIÓN ---
     };
 
     // --- Inicialización ---
     const init = async () => {
-        applyResponsiveStyles(); // Se llama a la función para aplicar estilos responsivos
+        applyResponsiveStyles();
         ui.initialize();
         await mapLogic.initialize();
         bindEvents();
