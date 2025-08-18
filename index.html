@@ -271,36 +271,45 @@
             .onboarding-title { font-size: 2rem; }
         }
 
-        /* --- INICIO DE LA CORRECCIÓN --- */
-        /* Estilos específicos para la vista apaisada en móviles y tablets */
+        /* --- INICIO DE LA CORRECCIÓN v2 --- */
         @media (max-width: 900px) and (orientation: landscape) {
+            #main-header {
+                /* Reducir el espacio del encabezado */
+                padding: 0.5rem 1.5rem;
+            }
+
             .dock-content {
-                /* Reducir el padding vertical para evitar desbordamiento en pantallas bajas */
-                padding-top: 2rem;
-                padding-bottom: 6rem;
-                /* Centrar el contenido verticalmente */
-                align-items: center;
+                /* Reducir el padding vertical para dar más espacio al contenido */
+                padding-top: 4rem; /* Suficiente para el encabezado más pequeño */
+                padding-bottom: 5rem; /* Suficiente para el dock inferior */
+                align-items: center; /* Mantener centrado verticalmente */
+            }
+
+            #app-carousel-track {
+                /* Limitar la altura del contenedor del carrusel a un valor más restrictivo */
+                max-height: 280px;
             }
 
             .app-card {
-                /* Hacer la tarjeta un poco más pequeña para que quepa mejor */
-                height: 90%;
-                max-height: 400px;
+                /* La tarjeta ahora llenará el 100% de la nueva altura del track */
+                height: 100%;
             }
 
             .card-content {
-                /* Reducir el padding interno de la tarjeta */
-                padding: 1.5rem;
+                /* Reducir aún más el padding para que el texto quepa mejor y centrarlo */
+                padding: 1rem;
+                justify-content: center;
             }
 
             .card-title {
-                /* Usar un tamaño de fuente adaptable a la altura de la pantalla */
-                font-size: clamp(1.8rem, 5vh, 2.2rem);
+                /* Reducir el tamaño de la fuente */
+                font-size: clamp(1.5rem, 6vh, 2rem);
             }
 
             .card-description {
-                font-size: 0.85rem;
-                margin-top: 0.5rem;
+                /* Reducir fuente y margen */
+                font-size: 0.8rem;
+                margin-top: 0.25rem;
             }
 
             /* Ajustar el slider inferior para un mejor layout horizontal */
@@ -322,7 +331,7 @@
                 margin: 0;
             }
         }
-        /* --- FIN DE LA CORRECCIÓN --- */
+        /* --- FIN DE LA CORRECCIÓN v2 --- */
     </style>
 </head>
 <body>
