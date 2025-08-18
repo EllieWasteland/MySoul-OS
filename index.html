@@ -1,4 +1,4 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -270,6 +270,59 @@
             .card-description { font-size: 0.9rem; }
             .onboarding-title { font-size: 2rem; }
         }
+
+        /* --- INICIO DE LA CORRECCIÓN --- */
+        /* Estilos específicos para la vista apaisada en móviles y tablets */
+        @media (max-width: 900px) and (orientation: landscape) {
+            .dock-content {
+                /* Reducir el padding vertical para evitar desbordamiento en pantallas bajas */
+                padding-top: 2rem;
+                padding-bottom: 6rem;
+                /* Centrar el contenido verticalmente */
+                align-items: center;
+            }
+
+            .app-card {
+                /* Hacer la tarjeta un poco más pequeña para que quepa mejor */
+                height: 90%;
+                max-height: 400px;
+            }
+
+            .card-content {
+                /* Reducir el padding interno de la tarjeta */
+                padding: 1.5rem;
+            }
+
+            .card-title {
+                /* Usar un tamaño de fuente adaptable a la altura de la pantalla */
+                font-size: clamp(1.8rem, 5vh, 2.2rem);
+            }
+
+            .card-description {
+                font-size: 0.85rem;
+                margin-top: 0.5rem;
+            }
+
+            /* Ajustar el slider inferior para un mejor layout horizontal */
+            #bottom-dock-wrapper {
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 1rem;
+                bottom: 0.5rem;
+            }
+
+            /* La clase 'w-full' de Tailwind causa problemas en este nuevo layout de fila.
+               La sobreescribimos para que el ancho sea automático. */
+            #bottom-dock-wrapper > .flex {
+                width: auto;
+            }
+
+            .dock-guide-text {
+                margin: 0;
+            }
+        }
+        /* --- FIN DE LA CORRECCIÓN --- */
     </style>
 </head>
 <body>
