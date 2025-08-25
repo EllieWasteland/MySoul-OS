@@ -1,20 +1,5 @@
-// Importa las funciones desde el gestor de datos.
-// NOTA: Se asume que existe un 'data-manager.js' que gestiona el localStorage.
-// Si no lo tienes, puedes reemplazar sus llamadas por localStorage.getItem/setItem directamente.
-const MOCK_DATA_MANAGER = {
-    getUnifiedData: () => {
-        const data = localStorage.getItem('unifiedData');
-        return data ? JSON.parse(data) : { myMemory: { memories: [], settings: { theme: 'dark' } } };
-    },
-    saveUnifiedData: (data) => {
-        localStorage.setItem('unifiedData', JSON.stringify(data));
-    },
-    getDefaultUnifiedState: () => ({
-        myMemory: { memories: [], settings: { theme: 'dark' } }
-    })
-};
-const { getUnifiedData, saveUnifiedData, getDefaultUnifiedState } = MOCK_DATA_MANAGER;
-
+// Importa las funciones reales desde el gestor de datos.
+import { getUnifiedData, saveUnifiedData, getDefaultUnifiedState } from './data-manager.js';
 
 // Envuelve toda la lógica en un listener que se asegura de que la página esté completamente cargada.
 window.addEventListener('load', () => {
@@ -24,6 +9,7 @@ window.addEventListener('load', () => {
     const memoryItemsContainer = document.getElementById('memory-items-container');
     const currentViewTitle = document.getElementById('current-view-title');
     const chatFormContainer = document.getElementById('chat-form-container');
+    const mainContainer = document.querySelector('.main-container');
 
     const floatingNav = document.getElementById('floating-nav');
     const addMemoryBtn = document.getElementById('add-memory-btn');
@@ -58,6 +44,12 @@ window.addEventListener('load', () => {
 
     const nestedMemoryBtn = document.getElementById('nested-memory-btn');
     const nestedMemoryMenu = document.getElementById('nested-memory-menu');
+
+    // --- CORRECCIÓN DEL BUG GRÁFICO ---
+    // Mueve el formulario de chat fuera del contenedor de scroll para que se mantenga fijo en la parte inferior.
+    if (chatFormContainer && mainContainer) {
+        mainContainer.appendChild(chatFormContainer);
+    }
     
     document.querySelectorAll('[data-close-modal]').forEach(btn => {
         btn.addEventListener('click', () => btn.closest('.modal-overlay').classList.remove('visible'));
@@ -72,23 +64,25 @@ window.addEventListener('load', () => {
 
     const getCurrentMemoryId = () => navigationStack[navigationStack.length - 1];
 
-    // --- FUNCIONES DE DATOS ---
+    // --- FUNCIONES DE DATOS (CORREGIDAS) ---
     const saveData = () => {
+        // Actualiza solo la parte de myMemory en el objeto de datos unificado
         unifiedData.myMemory.memories = memories;
         unifiedData.myMemory.settings = settings;
+        // Guarda el objeto completo
         saveUnifiedData(unifiedData);
     };
     
     const loadData = () => {
+        // Carga los datos usando la función real del data-manager
         unifiedData = getUnifiedData();
         
-        if (!unifiedData.myMemory) {
-            unifiedData.myMemory = getDefaultUnifiedState().myMemory;
-        }
-        
+        // Accede a la sección correcta de los datos
         memories = unifiedData.myMemory.memories || [];
         settings = unifiedData.myMemory.settings || {};
 
+        // La función deepMerge del data-manager ya se encarga de la migración,
+        // pero mantenemos esta validación por si acaso.
         let needsSave = false;
         memories.forEach(mem => {
             if (typeof mem.parentId === 'undefined') {
