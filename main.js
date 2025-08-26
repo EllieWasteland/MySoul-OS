@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const unifiedData = getUnifiedData();
         const internalApps = [
-            { title: 'MyTime', description: 'Gestión de tareas , tiempo y enfoque para maximizar tu productividad.', href: 'mytime.html', status: '[ SYSTEM ONLINE ]' },
+            { title: 'MyTime', description: 'Gestión de tareas , tiempo y enfoque para maximizar tu productividad.', href: './mytime/mytime.html', status: '[ SYSTEM ONLINE ]' },
             { title: 'MyRoute', description: 'Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.', href: 'myroute.html', status: '[ SYSTEM ONLINE ]' },
             { title: 'MyMemory', description: 'Tu memoria extendida para organizar aficiones, ideas y listas.', href: 'mymemory.html', status: '[ SYSTEM ONLINE ]' },
             { title: 'MyMood', description: 'Registra y analiza tu estado de ánimo a lo largo del tiempo.', href: 'mymood.html', status: '[ SYSTEM ONLINE ]' }
@@ -670,9 +670,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3 class="small-card-title">${todo.text || todo.title || 'Tarea sin descripción'}</h3>
                     ${todo.dueDate ? `<p class="text-xs text-secondary mt-1">Vence: ${new Date(todo.dueDate).toLocaleDateString()}</p>` : ''}
                 </div>`).join('');
-            todosGrid.innerHTML = `${contentHTML}<a href="mytime.html" class="action-button col-span-full">Gestionar Tareas</a>`;
+            todosGrid.innerHTML = `${contentHTML}<a href="./mytime/mytime.html" class="action-button col-span-full">Gestionar Tareas</a>`;
         } else {
-            todosGrid.innerHTML = `<div class="small-card items-center justify-center text-center col-span-full cursor-pointer" onclick="window.location.href='mytime.html'"><h3 class="small-card-title">Añadir Tarea</h3><p class="small-card-content text-4xl mt-2">+</p></div>`;
+            todosGrid.innerHTML = `<div class="small-card items-center justify-center text-center col-span-full cursor-pointer" onclick="window.location.href='./mytime/mytime.html'"><h3 class="small-card-title">Añadir Tarea</h3><p class="small-card-content text-4xl mt-2">+</p></div>`;
         }
     }
 
