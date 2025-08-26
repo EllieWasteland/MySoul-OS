@@ -436,9 +436,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const unifiedData = getUnifiedData();
         const internalApps = [
             { title: 'MyTime', description: 'Gestión de tareas , tiempo y enfoque para maximizar tu productividad.', href: './mytime/mytime.html', status: '[ SYSTEM ONLINE ]' },
-            { title: 'MyRoute', description: 'Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.', href: 'myroute.html', status: '[ SYSTEM ONLINE ]' },
-            { title: 'MyMemory', description: 'Tu memoria extendida para organizar aficiones, ideas y listas.', href: 'mymemory.html', status: '[ SYSTEM ONLINE ]' },
-            { title: 'MyMood', description: 'Registra y analiza tu estado de ánimo a lo largo del tiempo.', href: 'mymood.html', status: '[ SYSTEM ONLINE ]' }
+            { title: 'MyRoute', description: 'Tu compañero de rutas. Rastrea, guarda y revive tus aventuras.', href: './myroute/myroute.html', status: '[ SYSTEM ONLINE ]' },
+            { title: 'MyMemory', description: 'Tu memoria extendida para organizar aficiones, ideas y listas.', href: './mymemory/mymemory.html', status: '[ SYSTEM ONLINE ]' },
+            { title: 'MyMood', description: 'Registra y analiza tu estado de ánimo a lo largo del tiempo.', href: './mymood/mymood.html', status: '[ SYSTEM ONLINE ]' }
         ];
         const externalApps = (unifiedData.globalSettings.externalApps || []).map((app, index) => ({ ...app, status: '<span class="external-app-tag">APP EXTERNA</span>', isExternal: true, index }));
         const addAppCard = { title: 'Añadir App', description: 'Crea un acceso directo a tus aplicaciones y sitios web favoritos.', action: 'add_app', status: '[ + ]' };
