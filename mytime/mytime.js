@@ -1,4 +1,4 @@
-import { getUnifiedData, saveUnifiedData, getDefaultUnifiedState } from './data-manager.js';
+import { getUnifiedData, saveUnifiedData, getDefaultUnifiedState } from '../data-manager.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- SELECTORES ---
@@ -323,3 +323,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initApp();
 });
+
