@@ -141,7 +141,46 @@
         }
         .app-card:hover { border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 0 20px 0px var(--card-glow); }
         .app-card.exiting { transform: scale(1.1) !important; opacity: 0 !important; }
-        .card-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem; position: relative; z-index: 2; }
+
+        /* --- ESTILOS MEJORADOS --- */
+        .card-favicon-holder {
+            /* Ocupa 3/5 (60%) de la altura del contenedor de contenido */
+            height: 60%;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.05);
+            /* Centra la imagen del favicon */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem; /* Espacio interno para que la imagen no toque los bordes */
+            border-bottom: 1px solid var(--card-border); /* Línea divisoria */
+            flex-shrink: 0;
+        }
+        .card-favicon-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .card-text-content {
+            /* Ocupa 2/5 (40%) de la altura */
+            height: 40%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem; /* Espacio interno para el texto */
+            min-height: 0;
+        }
+        .card-content { 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            /* Eliminamos el padding de aquí para tener control total en los hijos */
+            padding: 0; 
+            position: relative; 
+            z-index: 2; 
+        }
+        /* --- FIN DE ESTILOS MEJORADOS --- */
+
         .card-title { font-family: 'Bitcount Prop Single', sans-serif; font-size: clamp(2.5rem, 8vw, 3.5rem); font-weight: 600; line-height: 1; color: var(--text-primary); }
         .card-description { font-size: 1rem; color: var(--text-secondary); margin-top: 0.75rem; max-width: 90%; }
         .card-status { font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 0.1em; }
@@ -200,7 +239,7 @@
             width: 100%;
             height: 42px;
             overflow: hidden;
-            padding: 0.75rem 2rem;
+            padding: 0 2rem;
         }
 
         .dock-category-text {

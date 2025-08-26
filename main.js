@@ -444,7 +444,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const addAppCard = { title: 'Añadir App', description: 'Crea un acceso directo a tus aplicaciones y sitios web favoritos.', action: 'add_app', status: '[ + ]' };
 
         const allApps = [...internalApps, ...externalApps, addAppCard];
-        track.innerHTML = allApps.map(app => `
+        
+        track.innerHTML = allApps.map(app => {
+            // --- LÓGICA PARA OBTENER FAVICON ---
+            const faviconHTML = app.href && !app.action
+                ? `<div class="card-favicon-holder">
+                       <img src="https://www.google.com/s2/favicons?sz=64&domain_url=${app.href}" alt="Favicon de ${app.title}" class="card-favicon-img" onerror="this.style.display='none'">
+                   </div>`
+                : '';
+            // --- FIN DE LÓGICA ---
+
+            return `
             <article class="app-card" data-href="${app.href || ''}" data-action="${app.action || ''}" ${app.isExternal ? `data-index="${app.index}"` : ''}>
                 ${app.isExternal ? `
                 <button class="card-options-btn" data-type="app" data-index="${app.index}">
@@ -456,15 +466,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 ` : ''}
                 <div class="card-content">
-                    <div class="card-header">
-                        <h2 class="card-title">${app.title || 'Sin Título'}</h2>
-                        <p class="card-description">${app.description || ''}</p>
+                    ${faviconHTML}
+                    <div class="card-text-content">
+                        <div class="card-header">
+                            <h2 class="card-title">${app.title || 'Sin Título'}</h2>
+                            <p class="card-description">${app.description || ''}</p>
+                        </div>
+                        <div class="card-footer"><span class="card-status">${app.status || ''}</span></div>
                     </div>
-                    <div class="card-footer"><span class="card-status">${app.status || ''}</span></div>
                 </div>
                 <div class="card-bg-decoration"></div>
             </article>
-        `).join('');
+        `}).join('');
 
         const cards = Array.from(track.querySelectorAll('.app-card'));
         if (cards.length === 0) return;
@@ -755,4 +768,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
-
