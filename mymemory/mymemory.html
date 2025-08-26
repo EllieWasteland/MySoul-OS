@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyMemory</title>
+    
+    <!-- Scripts y Fuentes Externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <!-- Enlace al archivo CSS dedicado para MyMemory -->
+    <link rel="stylesheet" href="mymemory.css">
+</head>
+<body>
+    <!-- Div para el fondo de pantalla y el patrón de puntos -->
+    <div id="app-background"></div>
+    <svg id="app-background-svg" viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice">
+        <path style="animation-delay: -5s;" d="M -20,80 C 40,20 80,120 140,70 S 180,10 220,60" />
+        <path style="animation-delay: -2s;" d="M -20,90 C 30,40 70,140 130,80 S 190,30 220,70" />
+        <path style="animation-delay: -7s;" d="M -20,100 C 20,80 40,120 60,100 C 80,80 100,120 120,100 C 140,80 160,120 180,100 C 200,80 220,120 240,100" />
+        <path style="animation-delay: -3s;" d="M -20,90 C 20,70 40,110 60,90 C 80,70 100,110 120,90 C 140,70 160,110 180,90 C 200,70 220,110 240,90" />
+    </svg>
+
+    <div class="main-container">
+        <!-- Vista Principal Dinámica -->
+        <div id="main-view" class="view">
+            <div class="view-title-container">
+                <h1 id="current-view-title" class="app-title">MyMemory</h1>
+            </div>
+
+            <!-- Contenedor para sub-memorias -->
+            <div id="memories-container" class="memories-list"></div>
+
+            <!-- Contenedor para items (notas/imágenes) -->
+            <div id="memory-items-container" class="details-list"></div>
+
+            <!-- Formulario de Chat en la parte inferior -->
+            <div id="chat-form-container" class="chat-form-container hidden">
+                <div id="image-preview-container" class="image-preview-container hidden">
+                    <img id="image-preview" src="#" alt="Image preview" />
+                    <button id="remove-image-btn">&times;</button>
+                </div>
+                <form id="add-item-form" class="chat-form">
+                    <!-- Botón y menú de memorias anidadas -->
+                    <div class="relative">
+                        <button type="button" id="nested-memory-btn" class="chat-form-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        </button>
+                        <div id="nested-memory-menu" class="nested-memory-menu hidden">
+                            <!-- El contenido se generará dinámicamente -->
+                        </div>
+                    </div>
+                    <input type="file" id="image-input" accept="image/*" class="hidden">
+                    <button type="button" id="attach-image-btn" class="chat-form-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                    </button>
+                    <textarea id="item-title-input" class="chat-input" placeholder="Escribe un recuerdo..." rows="1"></textarea>
+                    <button type="submit" id="send-btn" class="chat-form-btn send-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Navegación Flotante Principal -->
+        <nav id="floating-nav" class="floating-nav-bar">
+            <a href="../index.html" class="nav-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </a>
+            <button id="add-memory-btn" class="nav-button add-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <button id="settings-btn" class="nav-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+        </nav>
+         <!-- Botón para volver atrás en la jerarquía -->
+        <button id="back-btn" class="nav-button back-button hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+    </div>
+
+    <!-- Modales (sin cambios en la estructura interna) -->
+    <div id="memory-modal" class="modal-overlay">
+        <div class="modal-content">
+            <header class="flex justify-between items-center mb-6">
+                <h2 id="memory-modal-title" class="text-2xl font-semibold">Nuevo Módulo</h2>
+                <button class="close-modal-btn" data-close-modal>&times;</button>
+            </header>
+            <form id="memory-form">
+                <input type="hidden" id="memory-id-input">
+                <div id="modal-step-1" class="modal-step">
+                    <p class="text-sm text-secondary mb-4">Define un nombre único para tu nuevo módulo de memoria.</p>
+                    <label for="memory-title-input-modal" class="block mb-2 text-sm text-secondary">Título del Módulo</label>
+                    <div class="hud-item">
+                        <input type="text" id="memory-title-input-modal" class="input-field" required>
+                    </div>
+                    <div id="continue-btn-container" class="hud-item confirm-item w-full mt-6 hidden">
+                        <button type="button" id="continue-btn" class="hud-button w-full">Continuar</button>
+                    </div>
+                </div>
+                <div id="modal-step-2" class="modal-step">
+                    <p class="text-sm text-secondary mb-4">Añade una breve descripción para identificar el propósito de este módulo.</p>
+                    <label for="memory-description-input" class="block mb-2 text-sm text-secondary">Descripción (Opcional)</label>
+                    <div class="hud-item">
+                        <textarea id="memory-description-input" rows="3" class="input-field !p-2"></textarea>
+                    </div>
+                    <div class="flex gap-4 mt-6">
+                        <div class="hud-item flex-1">
+                            <button type="button" id="skip-btn" class="hud-button w-full">Omitir</button>
+                        </div>
+                        <div class="hud-item confirm-item flex-1">
+                            <button type="button" id="create-btn" class="hud-button w-full">Guardar Módulo</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <header class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Ajustes</h2>
+                <button class="close-modal-btn" data-close-modal>&times;</button>
+            </header>
+            <div class="space-y-8 mt-4">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Apariencia</h3>
+                    <div class="hud-item w-full">
+                        <button id="toggle-theme-btn" class="hud-button w-full">Cambiar Tema</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-red-500">Zona de Peligro</h3>
+                    <div class="hud-item danger-item w-full">
+                        <button id="delete-data-btn" class="hud-button w-full">Borrar toda la información</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="confirmation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <header class="flex justify-between items-center mb-6">
+                <h2 id="confirmation-title" class="text-2xl font-semibold">Confirmación</h2>
+            </header>
+            <p id="confirmation-message" class="text-secondary my-6">¿Estás seguro?</p>
+            <div class="flex gap-4 mt-8">
+                 <div class="hud-item flex-1">
+                    <button id="confirm-cancel-btn" class="hud-button w-full">Cancelar</button>
+                </div>
+                <div class="hud-item danger-item flex-1">
+                    <button id="confirm-action-btn" class="hud-button w-full">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT MODULAR: Toda la lógica de JS se carga desde aquí -->
+    <script type="module" src="mymemory.js"></script>
+</body>
+</html>
