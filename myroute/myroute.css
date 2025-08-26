@@ -1,0 +1,104 @@
+/* --- Definiciones de Temas y Variables --- */
+:root, body.theme-dark {
+    --brand-color: #ffffff; 
+    --brand-text: #000000;
+    --bg-primary: #000000;
+    --bg-secondary: #171717;
+    --text-primary: #ffffff;
+    --text-secondary: #a3a3a3;
+    --border-color: #262626;
+    --light-bg: #27272a;
+    --glass-bg: rgba(23, 23, 23, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+body.theme-light {
+    --brand-color: #000000;
+    --brand-text: #ffffff;
+    --bg-primary: #f4f4f5;
+    --bg-secondary: #ffffff;
+    --text-primary: #171717;
+    --text-secondary: #737373;
+    --border-color: #e4e4e7;
+    --light-bg: #e4e4e7;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.1);
+}
+
+/* --- Estilos Base --- */
+body { 
+    font-family: 'Nunito', sans-serif;
+    background-color: var(--bg-primary); 
+    color: var(--text-primary);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+}
+
+/* Filtro para el mapa en tema oscuro */
+body.theme-dark #map {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+.maplibregl-ctrl-logo, .maplibregl-ctrl-attrib { 
+    display: none !important; 
+}
+
+/* --- Componentes de UI reutilizables --- */
+.text-secondary { color: var(--text-secondary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-light { background-color: var(--light-bg); }
+.text-primary { color: var(--text-primary); }
+.border-border { border-color: var(--border-color); }
+.border-glass { border-color: var(--glass-border); }
+.bg-brand { background-color: var(--brand-color); }
+.text-bg-primary { color: var(--bg-primary); }
+.focus\:ring-brand:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: var(--brand-color) !important;
+}
+
+/* --- Botones --- */
+.btn-primary, .btn-secondary, .btn-stop {
+    transition: transform 0.2s ease;
+}
+.btn-primary {
+    background-color: var(--brand-color);
+    color: var(--brand-text);
+}
+.btn-secondary {
+    background-color: var(--light-bg);
+    color: var(--text-primary);
+}
+.btn-stop {
+    background-color: #ef4444; /* Rojo */
+    color: white;
+}
+.btn-primary:hover, .btn-secondary:hover, .btn-stop:hover {
+    transform: scale(1.05);
+}
+
+/* --- Paneles --- */
+.side-panel {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-panel {
+    transform: translateY(120%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg-primary) 40%);
+    pointer-events: none; /* No interactuable cuando está oculto */
+}
+.bottom-panel.active {
+    transform: translateY(0);
+    pointer-events: auto; /* Interactuable cuando está visible */
+}
+
+.stat-pill {
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
