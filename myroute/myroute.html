@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MyRoute</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MapLibre GL JS -->
+    <script src='https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.css' rel='stylesheet' />
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Google Fonts: Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+
+    <!-- Hoja de estilos local -->
+    <link rel="stylesheet" href="myroute.css">
+</head>
+<body class="theme-dark overflow-hidden h-screen flex flex-col">
+
+    <!-- Botón para volver al Hub Principal -->
+    <a href="../index.html" class="fixed top-5 left-5 z-10 btn-secondary w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl" aria-label="Volver al inicio">
+        <i class="ph ph-arrow-left"></i>
+    </a>
+
+    <!-- Contenedor principal del mapa -->
+    <div id="map" class="flex-grow"></div>
+
+    <!-- Overlay de estado -->
+    <div id="status-overlay" class="fixed top-5 left-1/2 -translate-x-1/2 bg-black bg-opacity-70 text-white text-sm rounded-full px-4 py-2 z-20 opacity-0 transition-opacity duration-300">
+        <p id="status-text">Estado</p>
+    </div>
+
+    <!-- Controles iniciales -->
+    <div id="initial-controls" class="bottom-panel fixed bottom-0 left-0 right-0 p-4 pb-8 z-10 flex justify-center">
+        <button id="start-record-btn" class="btn-primary text-lg font-bold py-4 px-8 rounded-full shadow-lg flex items-center gap-2">
+            <i class="ph-fill ph-dot"></i>
+            <span>Iniciar Ruta</span>
+        </button>
+    </div>
+
+    <!-- Panel de estadísticas de grabación -->
+    <div id="recording-stats-panel" class="bottom-panel fixed bottom-0 left-0 right-0 p-4 z-10">
+        <div class="stat-pill p-2 flex items-center justify-between rounded-2xl backdrop-blur-md">
+            <div class="flex-1 text-center">
+                <p class="text-xs text-secondary">Tiempo</p>
+                <p id="stat-time" class="text-lg font-bold">00:00:00</p>
+            </div>
+            <div class="flex-1 text-center border-x border-glass">
+                <p class="text-xs text-secondary">Distancia (km)</p>
+                <p id="stat-distance" class="text-lg font-bold">0.00</p>
+            </div>
+            <div class="flex-1 text-center">
+                <p class="text-xs text-secondary">Velocidad (km/h)</p>
+                <p id="stat-current-speed" class="text-lg font-bold">0.0</p>
+            </div>
+        </div>
+        <div class="flex justify-center items-center gap-4 mt-4">
+            <button id="pause-resume-btn" class="btn-secondary text-2xl w-16 h-16 rounded-full shadow-lg flex items-center justify-center"><i class="ph-fill ph-pause"></i></button>
+            <button id="stop-btn" class="btn-stop text-2xl w-20 h-20 rounded-full shadow-lg flex items-center justify-center"><i class="ph-fill ph-stop"></i></button>
+            <div class="w-16 h-16"></div> <!-- Espaciador -->
+        </div>
+    </div>
+
+    <!-- Panel de detalles de la ruta (Visualizador) -->
+    <div id="route-details-panel" class="bottom-panel fixed bottom-0 left-0 right-0 p-4 z-10">
+        <div class="stat-pill p-4 flex flex-col gap-3 rounded-2xl backdrop-blur-md">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 id="details-route-name" class="text-xl font-bold">Nombre de la Ruta</h3>
+                    <p id="details-route-date" class="text-sm text-secondary">Fecha</p>
+                </div>
+                <button id="close-details-btn" class="p-2 rounded-full bg-light"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div>
+                    <p class="text-xs text-secondary">Distancia Total</p>
+                    <p id="details-route-distance" class="text-lg font-bold">0.00 km</p>
+                </div>
+                <div>
+                    <p class="text-xs text-secondary">Duración</p>
+                    <p id="details-route-duration" class="text-lg font-bold">00:00:00</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones flotantes superiores -->
+    <div class="fixed top-5 right-5 z-10 flex flex-col gap-3">
+        <!-- BOTÓN PARA CENTRAR EL MAPA -->
+        <button id="recenter-btn" class="btn-secondary w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl"><i class="ph ph-crosshair"></i></button>
+        <button id="routes-btn" class="btn-secondary w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl"><i class="ph ph-list"></i></button>
+        <button id="settings-btn" class="btn-secondary w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl"><i class="ph ph-gear"></i></button>
+    </div>
+
+    <!-- Panel lateral de Rutas -->
+    <div id="routes-panel" class="side-panel fixed top-0 right-0 h-full w-full max-w-md z-30 transform translate-x-full">
+        <div class="flex flex-col h-full p-6 bg-secondary">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold">Mis Rutas</h2>
+                <button id="close-routes-btn" class="p-2 rounded-full bg-light"><i class="ph ph-x"></i></button>
+            </div>
+            <ul id="routes-list" class="flex-grow overflow-y-auto space-y-3"></ul>
+        </div>
+    </div>
+
+    <!-- Panel lateral de Ajustes -->
+    <div id="settings-panel" class="side-panel fixed top-0 right-0 h-full w-full max-w-md z-30 transform translate-x-full">
+        <div class="flex flex-col h-full p-6 bg-secondary">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold">Ajustes</h2>
+                <button id="close-settings-btn" class="p-2 rounded-full bg-light"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <label for="map-style-select" class="block mb-2 font-medium text-secondary">Estilo del Mapa</label>
+                    <select id="map-style-select" class="w-full border-2 border-transparent rounded-lg p-3 outline-none bg-light text-primary">
+                        <option value="dark">Oscuro</option>
+                        <option value="light">Claro</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Guardar Ruta -->
+    <div id="save-modal" class="fixed inset-0 bg-black bg-opacity-60 z-40 items-center justify-center p-4 hidden">
+        <div class="rounded-2xl p-6 w-full max-w-sm shadow-xl bg-secondary border border-border">
+            <h2 class="text-xl font-bold text-center mb-2">Guardar Ruta</h2>
+            <p class="text-center mb-4 text-secondary">Dale un nombre a tu aventura.</p>
+            <input type="text" id="route-name-input" class="w-full border-2 border-transparent rounded-lg p-3 mb-6 outline-none bg-light text-primary focus:ring-2 focus:ring-brand" placeholder="Ruta nocturna">
+            <div class="flex gap-4">
+                <button id="discard-btn" class="btn w-full font-bold py-3 px-4 rounded-lg bg-light text-primary">Descartar</button>
+                <button id="save-route-btn" class="btn w-full font-bold py-3 px-4 rounded-lg bg-brand text-bg-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cargar el script como un módulo para permitir import/export -->
+    <script type="module" src="myroute.js"></script>
+</body>
+</html>
