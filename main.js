@@ -196,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
         }
         
-        // --- INICIO DE LA MODIFICACIÓN ---
         const versionHTML = `
             <div class="flex flex-col items-center justify-center text-center py-6">
                 <svg class="w-20 h-20 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -222,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="personalization-content" class="settings-tab-content active">${personalizationHTML}</div>
             <div id="data-content" class="settings-tab-content">${dataManagementHTML}</div>
             <div id="version-content" class="settings-tab-content">${versionHTML}</div>`;
-        // --- FIN DE LA MODIFICACIÓN ---
         
         modalButtons.innerHTML = `<div class="hud-item rounded-full mt-6"><button id="settings-cancel" class="hud-button">Cerrar</button></div>`;
         genericModal.style.display = 'flex';
@@ -466,10 +464,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const allApps = [...internalApps, ...externalApps, addAppCard];
         
         track.innerHTML = allApps.map(app => {
-            // --- LÓGICA PARA OBTENER FAVICON ---
-            const faviconHTML = app.href && !app.action
+            // --- INICIO DE LÓGICA PARA OBTENER FAVICON ---
+            let faviconUrl = '';
+            if (app.href && !app.action) {
+                if (app.isExternal) {
+                    // App externa, usa el servicio de Google
+                    faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${app.href}`;
+                } else {
+                    // App interna, construye la ruta local
+                    const appName = app.title.toLowerCase();
+                    faviconUrl = `./${appName}/favicon.png`;
+                }
+            }
+
+            const faviconHTML = faviconUrl
                 ? `<div class="card-favicon-holder">
-                       <img src="https://www.google.com/s2/favicons?sz=64&domain_url=${app.href}" alt="Favicon de ${app.title}" class="card-favicon-img" onerror="this.style.display='none'">
+                       <img src="${faviconUrl}" alt="Favicon de ${app.title}" class="card-favicon-img" onerror="this.style.display='none'">
                    </div>`
                 : '';
             // --- FIN DE LÓGICA ---
@@ -721,7 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
                 <div class="small-card text-center items-center justify-center cursor-pointer" data-target="${shortcut.target || ''}" data-index="${index}">
                     <button class="card-options-btn" data-type="shortcut" data-index="${index}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="currentColor"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
                     </button>
                     <div class="card-options-menu" id="shortcut-options-${index}">
                         <button class="edit-btn" data-type="shortcut" data-index="${index}">Editar</button>
