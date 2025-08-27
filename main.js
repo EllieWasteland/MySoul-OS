@@ -195,14 +195,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="hud-item rounded-full"><button id="settings-import" class="hud-button">Importar Datos Locales</button></div>
                 </div>`;
         }
+        
+        // --- INICIO DE LA MODIFICACIÓN ---
+        const versionHTML = `
+            <div class="flex flex-col items-center justify-center text-center py-6">
+                <svg class="w-20 h-20 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 12c0 2.42-.943 4.638-2.5 6.312M15.75 9.75A3.75 3.75 0 0112 13.5m-3.75 0A3.75 3.75 0 0112 6.75m-3.75 0a3.75 3.75 0 00-3.75 3.75M9 13.5A3.75 3.75 0 0112 9.75M15 13.5A3.75 3.75 0 0112 17.25m-3.75 0h3.75" />
+                </svg>
+                <div class="mt-4">
+                    <p class="onboarding-text text-sm text-gray-400">Versión de compilación web:</p>
+                    <p class="font-mono text-white text-base">1.0.0-beta</p>
+                </div>
+                <div class="mt-3">
+                    <p class="onboarding-text text-sm text-gray-400">Versión nativa:</p>
+                    <p class="font-mono text-white text-base">proximamente</p>
+                </div>
+            </div>
+        `;
 
         modalText.innerHTML = `
-            <div id="settings-tabs">
+            <div id="settings-tabs" class="flex-wrap justify-center">
                 <button class="settings-tab active" data-tab="personalization">Personalización</button>
                 <button class="settings-tab" data-tab="data">Gestión de Datos</button>
+                <button class="settings-tab" data-tab="version">Versión</button>
             </div>
             <div id="personalization-content" class="settings-tab-content active">${personalizationHTML}</div>
-            <div id="data-content" class="settings-tab-content">${dataManagementHTML}</div>`;
+            <div id="data-content" class="settings-tab-content">${dataManagementHTML}</div>
+            <div id="version-content" class="settings-tab-content">${versionHTML}</div>`;
+        // --- FIN DE LA MODIFICACIÓN ---
         
         modalButtons.innerHTML = `<div class="hud-item rounded-full mt-6"><button id="settings-cancel" class="hud-button">Cerrar</button></div>`;
         genericModal.style.display = 'flex';
