@@ -13,14 +13,14 @@ window.addEventListener('load', () => {
 
     const floatingNav = document.getElementById('floating-nav');
     const addMemoryBtn = document.getElementById('add-memory-btn');
-    const settingsBtn = document.getElementById('settings-btn');
+    const searchBtn = document.getElementById('search-btn');
     const backBtn = document.getElementById('back-btn');
+    
+    const searchBarContainer = document.getElementById('search-bar-container');
+    const searchInput = document.getElementById('search-input');
 
     const memoryModal = document.getElementById('memory-modal');
-    const settingsModal = document.getElementById('settings-modal');
     const confirmationModal = document.getElementById('confirmation-modal');
-    const toggleThemeBtn = document.getElementById('toggle-theme-btn');
-    const deleteDataBtn = document.getElementById('delete-data-btn');
     const memoryForm = document.getElementById('memory-form');
     const memoryModalTitle = document.getElementById('memory-modal-title');
     const memoryIdInput = document.getElementById('memory-id-input');
@@ -46,7 +46,6 @@ window.addEventListener('load', () => {
     const nestedMemoryMenu = document.getElementById('nested-memory-menu');
 
     // --- CORRECCIÓN DEL BUG GRÁFICO ---
-    // Mueve el formulario de chat fuera del contenedor de scroll para que se mantenga fijo en la parte inferior.
     if (chatFormContainer && mainContainer) {
         mainContainer.appendChild(chatFormContainer);
     }
@@ -57,32 +56,26 @@ window.addEventListener('load', () => {
 
     // --- ESTADO Y DATOS ---
     let unifiedData = {};
-    let memories = []; // Lista plana de todas las memorias
+    let memories = [];
     let settings = {};
-    let navigationStack = [null]; // Pila de navegación. 'null' es la raíz.
+    let navigationStack = [null];
     let currentImage = null;
+    let isSearchActive = false;
 
     const getCurrentMemoryId = () => navigationStack[navigationStack.length - 1];
 
-    // --- FUNCIONES DE DATOS (CORREGIDAS) ---
+    // --- FUNCIONES DE DATOS ---
     const saveData = () => {
-        // Actualiza solo la parte de myMemory en el objeto de datos unificado
         unifiedData.myMemory.memories = memories;
         unifiedData.myMemory.settings = settings;
-        // Guarda el objeto completo
         saveUnifiedData(unifiedData);
     };
     
     const loadData = () => {
-        // Carga los datos usando la función real del data-manager
         unifiedData = getUnifiedData();
-        
-        // Accede a la sección correcta de los datos
         memories = unifiedData.myMemory.memories || [];
         settings = unifiedData.myMemory.settings || {};
 
-        // La función deepMerge del data-manager ya se encarga de la migración,
-        // pero mantenemos esta validación por si acaso.
         let needsSave = false;
         memories.forEach(mem => {
             if (typeof mem.parentId === 'undefined') {
@@ -124,7 +117,7 @@ window.addEventListener('load', () => {
         optionsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             document.querySelectorAll('.card-options-dropdown.visible, #nested-memory-menu:not(.hidden)').forEach(d => {
-                if (d !== dropdown) d.classList.add('hidden');
+                if (d !== dropdown) d.classList.remove('visible'); d.classList.add('hidden');
             });
             dropdown.classList.toggle('visible');
         });
@@ -162,6 +155,11 @@ window.addEventListener('load', () => {
     };
 
     const renderView = () => {
+        isSearchActive = false;
+        searchBarContainer.classList.add('hidden');
+        searchInput.value = '';
+        mainView.style.paddingTop = '5rem';
+        
         const currentId = getCurrentMemoryId();
         const currentMemory = currentId ? memories.find(m => m.id === currentId) : null;
 
@@ -209,6 +207,107 @@ window.addEventListener('load', () => {
             }
         }
         mainView.scrollTop = 0;
+    };
+    
+    // --- LÓGICA DE BÚSQUEDA ---
+    const performSearch = (query) => {
+        if (!query) return [];
+        const results = [];
+        const normalizedQuery = query.toLowerCase();
+
+        const addedItems = new Set();
+
+        memories.forEach(memory => {
+            if (memory.items) {
+                memory.items.forEach(item => {
+                    if (item.title && item.title.toLowerCase().includes(normalizedQuery) && !addedItems.has(item.id)) {
+                        results.push({ type: 'item', data: item, parent: memory });
+                        addedItems.add(item.id);
+                    }
+                });
+            }
+            if (memory.title.toLowerCase().includes(normalizedQuery) || (memory.description && memory.description.toLowerCase().includes(normalizedQuery))) {
+                results.push({ type: 'memory', data: memory });
+            }
+        });
+        return results;
+    };
+
+    const renderSearchResults = (query) => {
+        memoriesContainer.innerHTML = '';
+        memoryItemsContainer.innerHTML = '';
+        backBtn.classList.add('hidden');
+        chatFormContainer.classList.add('hidden');
+        floatingNav.classList.remove('hidden');
+
+        currentViewTitle.textContent = query ? `Resultados` : 'Búsqueda';
+        mainView.style.paddingTop = '9rem';
+
+        if (!query) {
+            memoryItemsContainer.innerHTML = `<p class="text-center text-secondary py-10">Busca por título o contenido de tus recuerdos.</p>`;
+            return;
+        }
+
+        const results = performSearch(query);
+
+        if (results.length === 0) {
+            memoryItemsContainer.innerHTML = `<p class="text-center text-secondary py-10">No se encontraron resultados para "${query}".</p>`;
+            return;
+        }
+
+        results.forEach(result => {
+            const resultEl = document.createElement('div');
+            resultEl.className = 'list-item search-result';
+            
+            if (result.type === 'memory') {
+                const mem = result.data;
+                resultEl.innerHTML = `
+                    <div class="item-header"><span class="font-bold text-sm" style="color: var(--online-color);">MÓDULO</span></div>
+                    <h4 class="font-semibold text-lg">${mem.title}</h4>
+                    <p class="text-secondary text-sm">${mem.description || 'Sin descripción.'}</p>`;
+                resultEl.addEventListener('click', () => {
+                    const path = [];
+                    let current = mem;
+                    while (current) {
+                        path.unshift(current.id);
+                        current = memories.find(m => m.id === current.parentId);
+                    }
+                    navigationStack = [null, ...path];
+                    renderView();
+                });
+            } else if (result.type === 'item') {
+                const item = result.data;
+                const parent = result.parent;
+                const date = new Date(item.timestamp).toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                resultEl.innerHTML = `
+                    <div class="item-header">
+                        <span class="text-xs">Nota en: <strong>${parent.title}</strong></span>
+                        <span class="text-xs">${date}</span>
+                    </div>
+                    ${item.image ? `<img src="${item.image}" alt="Recuerdo" class="item-image" style="max-height: 100px; width: auto; border-radius: 0.5rem;">` : ''}
+                    <p class="item-content-text mt-2">${item.title}</p>`;
+                resultEl.addEventListener('click', () => {
+                    const path = [];
+                    let current = parent;
+                    while (current) {
+                        path.unshift(current.id);
+                        current = memories.find(m => m.id === current.parentId);
+                    }
+                    navigationStack = [null, ...path];
+                    renderView();
+                    setTimeout(() => {
+                        const targetItem = mainView.querySelector(`[data-item-id="${item.id}"]`);
+                        if (targetItem) {
+                            targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            targetItem.style.backgroundColor = 'var(--online-color)';
+                            targetItem.style.transition = 'background-color 1s';
+                            setTimeout(() => { targetItem.style.backgroundColor = ''; }, 1500);
+                        }
+                    }, 100);
+                });
+            }
+            memoryItemsContainer.appendChild(resultEl);
+        });
     };
 
     const renderNestedMemoryMenu = () => {
@@ -302,7 +401,6 @@ window.addEventListener('load', () => {
     // --- OTRAS FUNCIONES ---
     const applyTheme = () => {
         document.documentElement.classList.toggle('light-mode', settings.theme === 'light');
-        if(toggleThemeBtn) toggleThemeBtn.textContent = settings.theme === 'light' ? 'Activar Modo Oscuro' : 'Activar Modo Claro';
     };
 
     const applyWallpaper = () => {
@@ -328,22 +426,21 @@ window.addEventListener('load', () => {
 
     // --- EVENT LISTENERS ---
     addMemoryBtn.addEventListener('click', () => showMemoryModal());
-    settingsBtn.addEventListener('click', () => showModal(settingsModal));
     
-    toggleThemeBtn.addEventListener('click', () => { 
-        settings.theme = settings.theme === 'dark' ? 'light' : 'dark'; 
-        saveData(); 
-        applyTheme(); 
-    });
-    deleteDataBtn.addEventListener('click', () => {
-        hideModal(settingsModal);
-        showConfirmationModal('¿Estás seguro de que quieres borrar TODA la información de MyMemory? Esta acción no se puede deshacer.', () => {
-            unifiedData.myMemory = getDefaultUnifiedState().myMemory;
-            loadData();
-            saveData();
-            navigationStack = [null];
+    searchBtn.addEventListener('click', () => {
+        isSearchActive = !searchBarContainer.classList.contains('hidden');
+        searchBarContainer.classList.toggle('hidden');
+        
+        if (!searchBarContainer.classList.contains('hidden')) {
+            searchInput.focus();
+            renderSearchResults(searchInput.value);
+        } else {
             renderView();
-        });
+        }
+    });
+
+    searchInput.addEventListener('input', (e) => {
+        renderSearchResults(e.target.value);
     });
     
     backBtn.addEventListener('click', () => {

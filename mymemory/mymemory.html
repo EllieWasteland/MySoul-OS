@@ -25,6 +25,11 @@
     </svg>
 
     <div class="main-container">
+        <!-- Barra de Búsqueda Flotante -->
+        <div id="search-bar-container" class="search-bar-container hidden">
+            <input type="text" id="search-input" class="search-input" placeholder="Buscar en todos los recuerdos...">
+        </div>
+
         <!-- Vista Principal Dinámica -->
         <div id="main-view" class="view">
             <div class="view-title-container">
@@ -34,7 +39,7 @@
             <!-- Contenedor para sub-memorias -->
             <div id="memories-container" class="memories-list"></div>
 
-            <!-- Contenedor para items (notas/imágenes) -->
+            <!-- Contenedor para items (notas/imágenes) y resultados de búsqueda -->
             <div id="memory-items-container" class="details-list"></div>
 
             <!-- Formulario de Chat en la parte inferior -->
@@ -73,8 +78,8 @@
             <button id="add-memory-btn" class="nav-button add-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
-            <button id="settings-btn" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <button id="search-btn" class="nav-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </button>
         </nav>
          <!-- Botón para volver atrás en la jerarquía -->
@@ -83,7 +88,7 @@
         </button>
     </div>
 
-    <!-- Modales (sin cambios en la estructura interna) -->
+    <!-- Modales -->
     <div id="memory-modal" class="modal-overlay">
         <div class="modal-content">
             <header class="flex justify-between items-center mb-6">
@@ -118,28 +123,6 @@
                     </div>
                 </div>
             </form>
-        </div>
-    </div>
-    <div id="settings-modal" class="modal-overlay">
-        <div class="modal-content">
-            <header class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-semibold">Ajustes</h2>
-                <button class="close-modal-btn" data-close-modal>&times;</button>
-            </header>
-            <div class="space-y-8 mt-4">
-                <div>
-                    <h3 class="text-lg font-semibold mb-2">Apariencia</h3>
-                    <div class="hud-item w-full">
-                        <button id="toggle-theme-btn" class="hud-button w-full">Cambiar Tema</button>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-2 text-red-500">Zona de Peligro</h3>
-                    <div class="hud-item danger-item w-full">
-                        <button id="delete-data-btn" class="hud-button w-full">Borrar toda la información</button>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
     <div id="confirmation-modal" class="modal-overlay">
