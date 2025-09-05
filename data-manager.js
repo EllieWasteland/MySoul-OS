@@ -12,6 +12,8 @@ export function getDefaultUnifiedState() {
             userName: null,
             tasks: [],
             schedule: [],
+            projects: [], // <-- MEJORA APLICADA AQUÍ
+            shopping: [], // <-- MEJORA APLICADA AQUÍ
             currentView: 'dashboard',
             selectedTaskId: null,
             selectedSubjectId: null,
@@ -110,3 +112,4 @@ export function saveUnifiedData(data) {
         console.error("Error al guardar los datos unificados:", error);
     }
 }
+
