@@ -1,5 +1,5 @@
 // Importa las funciones del gestor de datos
-import { getUnifiedData, saveUnifiedData } from './data-manager.js';
+import { getUnifiedData, saveUnifiedData } from '../data-manager.js';
 
 let appState;
 let currentSection = 'summary';
@@ -611,4 +611,5 @@ function initializeApp() {
 }
 
 initializeApp();
+
 
